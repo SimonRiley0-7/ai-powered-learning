@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAccessibility } from "@/context/AccessibilityContext";
@@ -54,6 +54,93 @@ export const AssessmentTaker: React.FC<AssessmentTakerProps> = ({
   const [timeRemaining, setTimeRemaining] = useState(initialTimeRemaining);
   const [explainingId, setExplainingId] = useState<string | null>(null);
   const [simplifiedTexts, setSimplifiedTexts] = useState<Record<string, string>>({});
+
+  // Voice Dictation State
+  const [isDictating, setIsDictating] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+
+  const startDictation = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream, { mimeType: "audio/webm" });
+      mediaRecorderRef.current = mediaRecorder;
+      chunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunksRef.current.push(e.data);
+      };
+
+      mediaRecorder.onstop = async () => {
+        stream.getTracks().forEach((t) => t.stop());
+        await processDictationAudio();
+      };
+
+      mediaRecorder.start();
+      setIsDictating(true);
+
+      // Speak feedback
+      const utterance = new SpeechSynthesisUtterance("Listening to your answer. Click stop when you are done.");
+      window.speechSynthesis.speak(utterance);
+
+      // Hard stop after 60 seconds of dictation
+      setTimeout(() => {
+        if (mediaRecorderRef.current?.state === "recording") {
+          mediaRecorderRef.current.stop();
+        }
+      }, 60000);
+    } catch (err) {
+      console.error("Mic access denied:", err);
+    }
+  };
+
+  const stopDictation = () => {
+    if (mediaRecorderRef.current?.state === "recording") {
+      mediaRecorderRef.current.stop();
+    }
+  };
+
+  const processDictationAudio = async () => {
+    setIsDictating(false);
+    try {
+      const blob = new Blob(chunksRef.current, { type: "audio/webm" });
+      const reader = new FileReader();
+      const base64 = await new Promise<string>((resolve) => {
+        reader.onloadend = () => {
+          const result = reader.result as string;
+          resolve(result.split(",")[1] || "");
+        };
+        reader.readAsDataURL(blob);
+      });
+
+      const res = await fetch("/api/voice/stt", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ audio: base64, language: "en-IN" }), // English focus
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        const text = data.transcript || "";
+        if (text) {
+          const question = questions[currentQuestionIndex];
+          setAnswers((prev) => {
+            const currentAnswer = prev[question.id] || "";
+            const newAnswer = currentAnswer ? `${currentAnswer.trim()} ${text.trim()}` : text.trim();
+            return { ...prev, [question.id]: newAnswer };
+          });
+
+          const conf = new SpeechSynthesisUtterance("Answer captured.");
+          window.speechSynthesis.speak(conf);
+        } else {
+          const err = new SpeechSynthesisUtterance("Could not capture speech. Please try again.");
+          window.speechSynthesis.speak(err);
+        }
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   useEffect(() => {
     // Auto-read the prompt if voice guidance is enabled and Web Speech API is accessible
@@ -269,7 +356,7 @@ export const AssessmentTaker: React.FC<AssessmentTakerProps> = ({
                 })}
               </div>
             ) : (
-              <div className="w-full">
+              <div className="w-full space-y-4">
                 <textarea
                   className={`w-full min-h-[200px] p-6 rounded-2xl border-2 border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all resize-y outline-none [.high-contrast_&]:!bg-black [.high-contrast_&]:!text-white [.high-contrast_&]:!border-white ${largeInteractionMode ? "text-2xl min-h-[300px]" : "text-lg"}`}
                   placeholder="Type your descriptive answer here..."
@@ -277,6 +364,26 @@ export const AssessmentTaker: React.FC<AssessmentTakerProps> = ({
                   onChange={handleTextChange}
                   spellCheck={!simplifiedMode}
                 />
+
+                <Button
+                  onClick={isDictating ? stopDictation : startDictation}
+                  variant="outline"
+                  className={`flex items-center gap-2 justify-center w-full transition-all border-2 
+                    ${isDictating ? "bg-red-50 text-red-600 border-red-500 hover:bg-red-100 hover:text-red-700 animate-pulse" : "bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 hover:border-blue-300"}
+                    ${largeInteractionMode ? "h-16 text-2xl" : "h-12 text-lg"}`}
+                >
+                  {isDictating ? (
+                    <>
+                      <span className="w-3 h-3 rounded-full bg-red-600 animate-bounce" />
+                      Listening for answer... (Tap to stop recording)
+                    </>
+                  ) : (
+                    <>
+                      <span>🎙️</span>
+                      Dictate Answer in English
+                    </>
+                  )}
+                </Button>
               </div>
             )}
           </CardContent>

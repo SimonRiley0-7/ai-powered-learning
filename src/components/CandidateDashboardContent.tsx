@@ -2,8 +2,8 @@
 
 import { useAccessibility } from "@/context/AccessibilityContext"
 import Link from "next/link"
-import React from "react"
-import { useRouter } from "next/navigation"
+import React, { useEffect, useState } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { startAttempt } from "@/app/actions/assessment"
@@ -25,8 +25,35 @@ interface DashboardContentProps {
 
 export function CandidateDashboardContent({ user, availableAssessments, verification }: DashboardContentProps) {
     const { largeInteractionMode, simplifiedMode } = useAccessibility()
-    const [isStarting, setIsStarting] = React.useState<string | null>(null);
+    const [isStarting, setIsStarting] = useState<string | null>(null);
     const router = useRouter();
+    const searchParams = useSearchParams();
+
+    // Auto-start assessment if navigated via Voice search
+    useEffect(() => {
+        const searchQuery = searchParams.get("search");
+        if (searchQuery && availableAssessments.length > 0 && !isStarting) {
+            const query = searchQuery.toLowerCase();
+            // Find best match based on title or subject
+            const matchedAssessment = availableAssessments.find(a =>
+                a.title.toLowerCase().includes(query) ||
+                a.subject.toLowerCase().includes(query) ||
+                query.includes(a.subject.toLowerCase()) ||
+                query.includes(a.title.toLowerCase())
+            );
+
+            if (matchedAssessment) {
+                console.log(`🎙️ [Auto-Start] Matched "${searchQuery}" to Assessment ID: ${matchedAssessment.id}`);
+                // Speak confirmation
+                if (typeof window !== "undefined" && "speechSynthesis" in window) {
+                    const utterance = new SpeechSynthesisUtterance(`Starting ${matchedAssessment.title}`);
+                    window.speechSynthesis.speak(utterance);
+                }
+                handleStartAssessment(matchedAssessment.id);
+            }
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [searchParams, availableAssessments]);
 
     const handleStartAssessment = async (assessmentId: string) => {
         setIsStarting(assessmentId);

@@ -5,52 +5,8 @@ import { useRouter } from "next/navigation";
 
 /**
  * VoiceNavButton — Floating microphone for voice commands
- * Records audio → sends to Sarvam STT → parses intent → navigates
+ * Records audio → sends to Sarvam STT → parses intent via Sarvam LLM → navigates
  */
-
-// Command intents with multilingual triggers
-const COMMAND_MAP: { intent: string; triggers: string[]; action: string }[] = [
-    {
-        intent: "dashboard",
-        triggers: ["dashboard", "home", "डैशबोर्ड", "होम", "டாஷ்போர்டு", "ড্যাশবোর্ড", "హోమ్"],
-        action: "/dashboard",
-    },
-    {
-        intent: "settings",
-        triggers: ["settings", "सेटिंग्स", "அமைப்புகள்", "সেটিংস", "సెట్టింగ్స్"],
-        action: "/dashboard/settings",
-    },
-    {
-        intent: "results",
-        triggers: ["results", "scores", "marks", "नतीजे", "अंक", "मार्क्स", "ফলাফল", "முடிவுகள்", "ఫలితాలు"],
-        action: "/dashboard/results",
-    },
-    {
-        intent: "login",
-        triggers: ["login", "sign in", "लॉगिन", "লগইন", "உள்நுழை", "లాగిన్"],
-        action: "/login",
-    },
-    {
-        intent: "logout",
-        triggers: ["logout", "sign out", "लॉगआउट", "লগআউট", "வெளியேறு", "లాగ్ అవుట్"],
-        action: "/api/auth/signout",
-    },
-    {
-        intent: "next_question",
-        triggers: ["next", "agla", "agle", "aage", "adutha", "porer", "taarpor", "next question", "agla sawal", "agle question pe", "அடுத்த", "perugu", "ಮುಂದಿನ"],
-        action: "ACTION_EVENT",
-    },
-    {
-        intent: "prev_question",
-        triggers: ["previous", "back", "pichla", "pichhe", "peeche", "munthaiya", "ager", "previous question", "pichla sawal", "முந்தைய", "వెనుకకు", "ಹಿಂದಿನ"],
-        action: "ACTION_EVENT",
-    },
-    {
-        intent: "submit_assessment",
-        triggers: ["submit", "finish", "jama", "samarppi", "joma", "submit assessment", "jama karo", "test khatam", "சமர்ப்பி", "సమర్పించండి", "ಸಲ್ಲಿಸು"],
-        action: "ACTION_EVENT",
-    },
-];
 
 // TTS feedback messages
 const FEEDBACK: Record<string, Record<string, string>> = {
@@ -181,27 +137,40 @@ export default function VoiceNavButton() {
                 return;
             }
 
-            // Parse command
-            const lowerText = text.toLowerCase();
-            const matched = COMMAND_MAP.find(cmd =>
-                cmd.triggers.some(trigger => lowerText.includes(trigger.toLowerCase()))
-            );
+            // Call the LLM Intent Parser
+            setStatus("processing");
+            const intentRes = await fetch("/api/voice/intent", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ transcript: text }),
+            });
 
-            if (matched) {
-                setStatus("success");
-                setTranscript(`${getFeedback("navigating", lang)}: ${matched.intent}`);
-                // Action dispatch or navigation after brief delay
-                setTimeout(() => {
-                    if (matched.action === "ACTION_EVENT") {
-                        window.dispatchEvent(new CustomEvent("voice_command", { detail: matched.intent }));
-                    } else {
-                        router.push(matched.action);
-                    }
-                    setShowPanel(false);
-                }, 800);
+            if (intentRes.ok) {
+                const intentData = await intentRes.json();
+                const { intent, action } = intentData;
+
+                if (intent && intent !== "unknown" && action) {
+                    setStatus("success");
+                    setTranscript(`${getFeedback("navigating", lang)}: ${intent}`);
+                    // Action dispatch or navigation after brief delay
+                    setTimeout(() => {
+                        if (action.startsWith("ACTION_EVENT:")) {
+                            const eventName = action.split(":")[1];
+                            window.dispatchEvent(new CustomEvent("voice_command", { detail: eventName }));
+                        } else {
+                            // If it's a specific assessment request, we can append the query
+                            const targetPath = intent === "take_assessment" ? `${action}?search=${encodeURIComponent(text)}` : action;
+                            router.push(targetPath);
+                        }
+                        setShowPanel(false);
+                    }, 800);
+                } else {
+                    setStatus("error");
+                    setTranscript(`"${text}" — ${getFeedback("not_understood", lang)}`);
+                }
             } else {
                 setStatus("error");
-                setTranscript(`"${text}" — ${getFeedback("not_understood", lang)}`);
+                setTranscript(`"${text}" — Error contacting AI Router.`);
             }
         } catch (err) {
             console.error("🎙️ Processing error:", err);
