@@ -86,6 +86,8 @@ export function CandidateDashboardContent({ user, availableAssessments, verifica
                                         </div>
                                         <div className="w-full md:w-auto mt-2 md:mt-0 shrinkage-0">
                                             <Button
+                                                role="link"
+                                                aria-label={`Take assessment: ${test.title}`}
                                                 onClick={() => handleStartAssessment(test.id)}
                                                 disabled={isStarting === test.id}
                                                 className={

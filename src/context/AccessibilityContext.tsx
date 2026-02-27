@@ -104,19 +104,42 @@ export function AccessibilityProvider({ children }: { children: React.ReactNode 
             const res = await fetch("/api/accessibility/settings")
             if (res.ok) {
                 const settings = await res.json()
-                // Priority 1-3: Supervisor Lock > Verified Settings > DB Profile
-                applyProfile(settings.disabilityType || "NONE", {
-                    highContrast: settings.highContrast,
-                    largeText: settings.largeText,
-                    largeInteractionMode: settings.largeInteractionMode,
-                    simplifiedMode: settings.simplifiedMode,
-                    voiceGuidanceEnabled: settings.voiceGuidanceEnabled,
-                })
+                // If user manually changed the type recently, don't let the slow DB fetch override it.
+                // Otherwise apply DB settings.
+                setState(prev => {
+                    if (prev.disabilityType !== "NONE" && prev.disabilityType !== settings.disabilityType) {
+                        return prev; // Prioritize the local active selection over the slow DB fetch
+                    }
+
+                    const newType = settings.disabilityType || "NONE";
+                    const preset = DISABILITY_MAP[newType as DisabilityType];
+
+                    const nextState = {
+                        ...DEFAULT_STATE,
+                        ...preset,
+                        disabilityType: newType,
+                        highContrast: settings.highContrast !== undefined ? settings.highContrast : preset.highContrast,
+                        largeText: settings.largeText !== undefined ? settings.largeText : preset.largeText,
+                        largeInteractionMode: settings.largeInteractionMode !== undefined ? settings.largeInteractionMode : preset.largeInteractionMode,
+                        simplifiedMode: settings.simplifiedMode !== undefined ? settings.simplifiedMode : preset.simplifiedMode,
+                        voiceGuidanceEnabled: settings.voiceGuidanceEnabled !== undefined ? settings.voiceGuidanceEnabled : preset.voiceGuidanceEnabled,
+                    };
+
+                    if (typeof document !== "undefined") {
+                        const body = document.body
+                        body.classList.toggle("high-contrast", nextState.highContrast)
+                        body.classList.toggle("large-text", nextState.largeText)
+                        body.classList.toggle("large-interaction", nextState.largeInteractionMode)
+                        body.classList.toggle("simplified-mode", nextState.simplifiedMode)
+                        body.classList.toggle("aac-mode-active", nextState.aacEnabled)
+                    }
+                    return nextState;
+                });
             }
         } catch (error) {
             console.error("Failed to fetch accessibility settings:", error)
         }
-    }, [session, applyProfile])
+    }, [session])
 
     useEffect(() => {
         refreshSettings()
