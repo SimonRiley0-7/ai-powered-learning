@@ -1,0 +1,265 @@
+// prisma/schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id                String            @id @default(cuid())
+  name              String?
+  email             String            @unique
+  emailVerified     DateTime?
+  image             String?
+  password          String?
+  role              UserRole          @default(CANDIDATE)
+  disabilityType    DisabilityType    @default(NONE)
+  pwdRequirements   PWDRequirements?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  assessments       Assessment[]      @relation("UserAssessments")
+  assessmentResults Result[]
+  attempts          Attempt[]
+  accounts          Account[]
+  sessions          Session[]
+  pwdVerification   PWDVerification?
+  accessibilitySettings AccessibilitySettings?
+}
+
+model Assessment {
+  id                    String                 @id @default(cuid())
+  title                 String
+  description           String
+  subject               String
+  skillLevel            SkillLevel
+  duration              Int                    // in minutes
+  passingScore          Int                    // percentage
+  mode                  AssessmentMode
+  isAdaptive            Boolean                @default(false)
+  isPublished           Boolean                @default(false)
+  instructorId          String                 @default("default_instructor")
+  accessibilityFeatures AccessibilityFeature[]
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  questions             Question[]
+  results               Result[]
+  attempts              Attempt[]
+  users                 User[]                 @relation("UserAssessments")
+}
+
+model Question {
+  id            String       @id @default(cuid())
+  assessmentId  String
+  prompt        String
+  type          QuestionType
+  options       Json?
+  correctAnswer String?
+  difficulty    DifficultyLevel   @default(MEDIUM)
+  points        Int          @default(1)
+  assessment    Assessment   @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  answers       Answer[]
+}
+
+model Attempt {
+  id                  String        @id @default(cuid())
+  userId              String
+  assessmentId        String
+  startedAt           DateTime      @default(now())
+  submittedAt         DateTime?
+  extraTimeMultiplier Float         @default(1.0)
+  totalScore          Float?
+  gradingStatus       GradingStatus @default(PENDING)
+  user                User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  assessment          Assessment    @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  answers             Answer[]
+}
+
+model Answer {
+  id               String   @id @default(cuid())
+  attemptId        String
+  questionId       String
+  response         String
+  aiScore          Float?
+  aiFeedback       String?
+  createdAt        DateTime @default(now())
+  attempt          Attempt  @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  question         Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+}
+
+model Result {
+  id           String       @id @default(cuid())
+  userId       String
+  assessmentId String
+  totalScore   Float
+  percentage   Float
+  status       ResultStatus @default(PENDING)
+  startedAt    DateTime
+  completedAt  DateTime?
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  assessment   Assessment   @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+}
+
+enum UserRole {
+  ADMIN
+  INSTRUCTOR
+  CANDIDATE
+}
+
+enum SkillLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+  EXPERT
+}
+
+enum AssessmentMode {
+  ONLINE
+  OFFLINE
+  BLENDED
+}
+
+enum QuestionType {
+  MCQ
+  DESCRIPTIVE
+  SHORT_ANSWER
+}
+
+enum DifficultyLevel {
+  EASY
+  MEDIUM
+  HARD
+}
+
+enum ResultStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  PASSED
+}
+
+enum GradingStatus {
+  PENDING
+  AI_EVALUATED
+  FINALIZED
+}
+
+enum AccessibilityFeature {
+  SCREEN_READER
+  TEXT_TO_SPEECH
+  VOICE_TO_TEXT
+  HIGH_CONTRAST
+  KEYBOARD_NAVIGATION
+  LARGE_TEXT
+  SIGN_LANGUAGE
+  EXTENDED_TIME
+}
+
+model PWDRequirements {
+  id                      String                 @id @default(cuid())
+  userId                  String                 @unique
+  isVisuallyImpaired      Boolean                @default(false)
+  isHearingImpaired       Boolean                @default(false)
+  isMotorImpaired         Boolean                @default(false)
+  isCognitiveImpaired     Boolean                @default(false)
+  requiresAssistiveTech   Boolean                @default(false)
+  preferredAccommodations AccessibilityFeature[]
+  additionalNotes         String?
+  user                    User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// NextAuth Models
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+enum VerificationStatus {
+  PENDING
+  VERIFIED
+  FAILED
+}
+
+model PWDVerification {
+  id                String             @id @default(cuid())
+  userId            String             @unique
+  certificateUUID   String?
+  issuingAuthority  String?
+  disabilityType    String?
+  disabilityPercent Int?
+  verificationStatus VerificationStatus @default(PENDING)
+  verifiedAt        DateTime?
+  createdAt         DateTime           @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model AccessibilitySettings {
+  id                     String      @id @default(cuid())
+  userId                 String      @unique
+  highContrast           Boolean     @default(false)
+  textToSpeech           Boolean     @default(false)
+  speechToText           Boolean     @default(false)
+  voiceNavigationEnabled Boolean     @default(false)
+  preferredInputMethod   InputMethod @default(KEYBOARD)
+
+  // Supervisor-provisioned accommodation fields
+  largeInteractionMode   Boolean     @default(false)
+  largeText              Boolean     @default(false)
+  voiceGuidanceEnabled   Boolean     @default(false)
+  autoAdvanceQuestions   Boolean     @default(false)
+  extraTimeMultiplier    Float       @default(1.0)
+  simplifiedMode         Boolean     @default(false)
+  lockedBySupervisor     Boolean     @default(false)
+  lockedAt               DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum InputMethod {
+  KEYBOARD
+  VOICE
+  MIXED
+}
+
+enum DisabilityType {
+  NONE
+  VISUAL
+  MOTOR
+  HEARING
+  COGNITIVE
+  SPEECH
+}
