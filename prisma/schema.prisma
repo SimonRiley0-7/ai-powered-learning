@@ -52,16 +52,24 @@ model Assessment {
 }
 
 model Question {
-  id            String       @id @default(cuid())
-  assessmentId  String
-  prompt        String
-  type          QuestionType
-  options       Json?
-  correctAnswer String?
-  difficulty    DifficultyLevel   @default(MEDIUM)
-  points        Int          @default(1)
-  assessment    Assessment   @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
-  answers       Answer[]
+  id                String          @id @default(cuid())
+  assessmentId      String
+  subject           String?         // Subject grouping within assessment
+  prompt            String
+  type              QuestionType
+  options           Json?
+  correctAnswer     String?
+  difficulty        DifficultyLevel @default(MEDIUM)
+  points            Int             @default(1)
+  mandatoryKeywords Json?           // string[] of required keywords
+  supportingKeywords Json?          // string[] of bonus keywords
+  expectedStructure String?         // e.g. "intro-body-conclusion"
+  minWords          Int?
+  optimalWords      Int?
+  maxWords          Int?
+  minPointsRequired Int?            // minimum conceptual points needed
+  assessment        Assessment      @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  answers           Answer[]
 }
 
 model Attempt {
@@ -79,15 +87,23 @@ model Attempt {
 }
 
 model Answer {
-  id               String   @id @default(cuid())
-  attemptId        String
-  questionId       String
-  response         String
-  aiScore          Float?
-  aiFeedback       String?
-  createdAt        DateTime @default(now())
-  attempt          Attempt  @relation(fields: [attemptId], references: [id], onDelete: Cascade)
-  question         Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  id                 String   @id @default(cuid())
+  attemptId          String
+  questionId         String
+  response           String
+  aiScore            Float?
+  aiFeedback         String?
+  marksDistribution  Json?    // Table 1: criteria breakdown
+  pointsValidation   Json?    // Table 2: required points coverage
+  originalityMetrics Json?    // AI detection scores
+  keywordAnalysis    Json?    // keyword match & penalty data
+  integrityFlags     Json?    // suspected AI usage, POV flags
+  careerMapping      Json?    // career intelligence (Subject 3 only)
+  numericalValidation Json?   // numerical step-by-step validation
+  diagramEvaluation  Json?    // diagram component/label/flow scoring
+  createdAt          DateTime @default(now())
+  attempt            Attempt  @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  question           Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
 }
 
 model Result {
@@ -126,6 +142,8 @@ enum QuestionType {
   MCQ
   DESCRIPTIVE
   SHORT_ANSWER
+  NUMERICAL
+  DIAGRAM
 }
 
 enum DifficultyLevel {

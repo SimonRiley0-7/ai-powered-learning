@@ -2,7 +2,7 @@
 
 import { prisma } from "@/lib/prisma"
 import { auth } from "@/auth"
-import { gradeDescriptiveAnswer } from "@/lib/ai/gemini"
+import { gradeEnterpriseAnswer, runAttemptLevelAnalysis } from "@/lib/ai/grading-engine"
 
 // For Instructors to fetch their created assessments
 export async function getInstructorAssessments() {
@@ -29,7 +29,6 @@ export async function getAvailableAssessments() {
     const session = await auth()
     if (!session?.user?.id) throw new Error("Unauthorized")
 
-    // Normally you'd filter this by enrollment or something, but we'll return all
     return await prisma.assessment.findMany({
         include: {
             _count: { select: { questions: true } }
@@ -46,7 +45,7 @@ export async function getAssessmentWithQuestions(assessmentId: string) {
     return await prisma.assessment.findUnique({
         where: { id: assessmentId },
         include: {
-            questions: true // Fetch questions so we can render them
+            questions: true
         }
     })
 }
@@ -56,7 +55,6 @@ export async function startAttempt(assessmentId: string) {
     const session = await auth()
     if (!session?.user?.id) throw new Error("Unauthorized")
 
-    // Fetch assessment logic
     const assessment = await prisma.assessment.findUnique({
         where: { id: assessmentId }
     })
@@ -68,7 +66,6 @@ export async function startAttempt(assessmentId: string) {
     })
     const multiplier = settings?.extraTimeMultiplier || 1.0
 
-    // Record attempt
     const attempt = await prisma.attempt.create({
         data: {
             userId: session.user.id,
@@ -80,10 +77,13 @@ export async function startAttempt(assessmentId: string) {
     return attempt.id
 }
 
-// Submit and intelligently grade an Attempt
+// ──────────────────────────────────────────────
+// ENTERPRISE GRADING PIPELINE
+// ──────────────────────────────────────────────
+
 export async function submitAttempt(
     attemptId: string,
-    userAnswers: Record<string, string> // questionId -> response
+    userAnswers: Record<string, string>
 ) {
     const session = await auth()
     if (!session?.user?.id) throw new Error("Unauthorized")
@@ -98,45 +98,99 @@ export async function submitAttempt(
     }
 
     let totalScore = 0
-    const answerRecords = []
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const answerRecords: any[] = []
+    const gradingResults = []
 
-    // Grade each question individually
+    // ── Grade each question via Enterprise Engine ──
     for (const question of attempt.assessment.questions) {
         const response = userAnswers[question.id] || ""
-        let score = 0
-        let feedback = null
 
-        if (question.type === "MCQ") {
-            // Immediate Deterministic Evaluation
-            if (response === question.correctAnswer) {
-                score = question.points
-                feedback = "Correct"
-            } else {
-                feedback = "Incorrect"
-            }
-        } else if (question.type === "DESCRIPTIVE" || question.type === "SHORT_ANSWER") {
-            // AI-Powered Natural Language Grading
-            const result = await gradeDescriptiveAnswer(
-                question.prompt,
-                question.correctAnswer,
-                response,
-                question.points
-            )
-            score = result.score
-            feedback = result.feedback
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const q = question as any
+        const questionMeta = {
+            id: question.id,
+            prompt: question.prompt,
+            type: question.type,
+            correctAnswer: question.correctAnswer,
+            points: question.points,
+            subject: q.subject as string | null,
+            mandatoryKeywords: (q.mandatoryKeywords as string[]) || [],
+            supportingKeywords: (q.supportingKeywords as string[]) || [],
+            expectedStructure: q.expectedStructure as string | null,
+            minWords: q.minWords as number | null,
+            optimalWords: q.optimalWords as number | null,
+            maxWords: q.maxWords as number | null,
+            minPointsRequired: q.minPointsRequired as number | null,
         }
 
-        totalScore += score
+        const result = await gradeEnterpriseAnswer(questionMeta, response)
+
+        totalScore += result.score
+        gradingResults.push(result)
+
         answerRecords.push({
             attemptId: attempt.id,
             questionId: question.id,
             response,
-            aiScore: score,
-            aiFeedback: feedback
+            aiScore: result.score,
+            aiFeedback: result.feedback,
+            marksDistribution: result.marksDistribution,
+            pointsValidation: result.pointsValidation,
+            keywordAnalysis: result.keywordAnalysis,
+            integrityFlags: result.integrityFlags,
+            numericalValidation: result.numericalValidation,
+            diagramEvaluation: result.diagramEvaluation,
         })
     }
 
-    // Persist scores and transition Attempt Status
+    // ── Attempt-level analysis (originality + career mapping) ──
+    const questions = attempt.assessment.questions.map(q => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const qAny = q as any
+        return {
+            id: q.id,
+            prompt: q.prompt,
+            type: q.type,
+            correctAnswer: q.correctAnswer,
+            points: q.points,
+            subject: qAny.subject as string | null,
+            mandatoryKeywords: (qAny.mandatoryKeywords as string[]) || [],
+            supportingKeywords: (qAny.supportingKeywords as string[]) || [],
+            expectedStructure: qAny.expectedStructure as string | null,
+            minWords: qAny.minWords as number | null,
+            optimalWords: qAny.optimalWords as number | null,
+            maxWords: qAny.maxWords as number | null,
+            minPointsRequired: qAny.minPointsRequired as number | null,
+        }
+    })
+
+    const attemptAnalysis = await runAttemptLevelAnalysis(
+        questions, userAnswers, gradingResults
+    )
+
+    // Apply originality metrics to all descriptive answer records
+    for (const record of answerRecords) {
+        record.originalityMetrics = attemptAnalysis.originalityMetrics
+    }
+
+    // Apply career mapping to the last answer record (or first AI subject answer)
+    const aiQuestionIds = questions
+        .filter(q =>
+            q.subject?.toLowerCase().includes("ai") ||
+            q.subject?.toLowerCase().includes("career")
+        )
+        .map(q => q.id)
+
+    if (attemptAnalysis.careerMapping) {
+        const targetRecord = answerRecords.find(r => aiQuestionIds.includes(r.questionId))
+            || answerRecords[answerRecords.length - 1]
+        if (targetRecord) {
+            targetRecord.careerMapping = attemptAnalysis.careerMapping
+        }
+    }
+
+    // ── Persist everything ──
     await prisma.$transaction([
         prisma.answer.createMany({ data: answerRecords }),
         prisma.attempt.update({

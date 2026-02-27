@@ -19,8 +19,8 @@ export async function GET(request: NextRequest) {
         // Step 1: APISetu Sandbox is currently throwing 503 on the login page!
         // We bypass the broken upstream UI by immediately simulating the redirect callback
         // with our dummy code to hit our backend processor instead.
-        const redirectUriLocal = process.env.DIGILOCKER_REDIRECT_URI || `${request.nextUrl.origin} /api/digilocker`;
-        return NextResponse.redirect(`${redirectUriLocal}?code = sandbox_bypassed_503`);
+        const redirectUriLocal = process.env.DIGILOCKER_REDIRECT_URI || `${request.nextUrl.origin}/api/digilocker`;
+        return NextResponse.redirect(`${redirectUriLocal}?code=sandbox_bypassed_503`);
     } else {
         try {
             console.log("🛠️ Exchanging Sandbox Code via Simulation (Bypassing 503):", code);

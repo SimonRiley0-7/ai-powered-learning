@@ -6,8 +6,9 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { useAccessibility } from "@/context/AccessibilityContext";
 import { explainSimply } from "@/lib/ai/gemini";
 import AccessibilityControls from "@/components/AccessibilityControls";
+import SpeakButton from "@/components/voice/SpeakButton";
 
-type QuestionType = "MCQ" | "DESCRIPTIVE" | "SHORT_ANSWER";
+type QuestionType = "MCQ" | "DESCRIPTIVE" | "SHORT_ANSWER" | "NUMERICAL" | "DIAGRAM";
 
 interface Question {
   id: string;
@@ -86,7 +87,6 @@ export const AssessmentTaker: React.FC<AssessmentTakerProps> = ({
       });
     }, 1000);
     return () => clearInterval(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [answers, isSubmitting]);
 
   const handleOptionSelect = (option: string) => {
@@ -122,6 +122,39 @@ export const AssessmentTaker: React.FC<AssessmentTakerProps> = ({
     }));
     onComplete(formattedAnswers);
   };
+
+  // Handle global voice commands from VoiceNavButton
+  useEffect(() => {
+    const handleVoiceCommand = (e: Event) => {
+      const customEvent = e as CustomEvent<string>;
+      const intent = customEvent.detail;
+
+      console.log(`🎙️ [AssessmentTaker] Received voice command: ${intent}`);
+
+      if (intent === "next_question") {
+        if (currentQuestionIndex < questions.length - 1) {
+          handleNext();
+        } else {
+          // Give audio feedback that this is the last question
+          const utterance = new SpeechSynthesisUtterance("This is the last question.");
+          window.speechSynthesis.speak(utterance);
+        }
+      } else if (intent === "prev_question") {
+        if (currentQuestionIndex > 0) {
+          handlePrevious();
+        } else {
+          const utterance = new SpeechSynthesisUtterance("This is the first question.");
+          window.speechSynthesis.speak(utterance);
+        }
+      } else if (intent === "submit_assessment") {
+        handleSubmit();
+      }
+    };
+
+    window.addEventListener("voice_command", handleVoiceCommand);
+    return () => window.removeEventListener("voice_command", handleVoiceCommand);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentQuestionIndex, questions.length]);
 
   const handleExplainSimply = async (question: Question) => {
     if (simplifiedTexts[question.id]) return;
@@ -179,9 +212,12 @@ export const AssessmentTaker: React.FC<AssessmentTakerProps> = ({
               {!simplifiedMode && <span className="font-bold text-slate-400 [.high-contrast_&]:!text-white">{currentQuestion.difficulty}</span>}
             </div>
 
-            <CardTitle className={`font-bold leading-snug text-slate-900 mt-4 [.high-contrast_&]:!text-white ${largeInteractionMode ? "text-4xl" : "text-2xl"}`}>
-              {currentQuestion.prompt}
-            </CardTitle>
+            <div className="flex items-start gap-4 mt-4">
+              <CardTitle className={`flex-1 font-bold leading-snug text-slate-900 [.high-contrast_&]:!text-white ${largeInteractionMode ? "text-4xl" : "text-2xl"}`}>
+                {currentQuestion.prompt}
+              </CardTitle>
+              <SpeakButton text={currentQuestion.prompt} size={largeInteractionMode ? "lg" : "md"} className="shrink-0 mt-1" />
+            </div>
 
             {/* COGNITIVE: Explain Simply Feature */}
             {simplifiedMode && (

@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useActionState, useEffect } from "react";
+import { useRef, useActionState, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -43,6 +43,113 @@ export function LoginForm({ action }: LoginFormProps) {
     const errorRef = useRef<HTMLDivElement>(null);
     const formRef = useRef<HTMLFormElement>(null);
     const emailInputRef = useRef<HTMLInputElement>(null);
+
+    // Voice Login State
+    const [isListeningForEmail, setIsListeningForEmail] = useState(false);
+    const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+    const chunksRef = useRef<Blob[]>([]);
+
+    const startEmailListening = async () => {
+        try {
+            // First play instructions via TTS
+            const utterance = new SpeechSynthesisUtterance("Please spell your email address letter by letter. Say 'at' for the @ symbol, and 'dot' for the period.");
+            window.speechSynthesis.speak(utterance);
+
+            // Wait a brief moment for TTS to finish before recording
+            setTimeout(async () => {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                const mediaRecorder = new MediaRecorder(stream, { mimeType: "audio/webm" });
+                mediaRecorderRef.current = mediaRecorder;
+                chunksRef.current = [];
+
+                mediaRecorder.ondataavailable = (e) => {
+                    if (e.data.size > 0) chunksRef.current.push(e.data);
+                };
+
+                mediaRecorder.onstop = async () => {
+                    stream.getTracks().forEach(t => t.stop());
+                    await processEmailAudio();
+                };
+
+                mediaRecorder.start();
+                setIsListeningForEmail(true);
+
+                // Stop after 6 seconds
+                setTimeout(() => {
+                    if (mediaRecorderRef.current?.state === "recording") {
+                        mediaRecorderRef.current.stop();
+                    }
+                }, 6000);
+            }, 5000); // 5s delay for instructions
+
+        } catch (err) {
+            console.error("Mic access denied:", err);
+        }
+    };
+
+    const stopEmailListening = () => {
+        if (mediaRecorderRef.current?.state === "recording") {
+            mediaRecorderRef.current.stop();
+        }
+    };
+
+    const processEmailAudio = async () => {
+        setIsListeningForEmail(false);
+        try {
+            const blob = new Blob(chunksRef.current, { type: "audio/webm" });
+            const reader = new FileReader();
+            const base64 = await new Promise<string>((resolve) => {
+                reader.onloadend = () => {
+                    const result = reader.result as string;
+                    resolve(result.split(",")[1] || "");
+                };
+                reader.readAsDataURL(blob);
+            });
+
+            const res = await fetch("/api/voice/stt", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ audio: base64, language: "en-IN" }),
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                let text = data.transcript || "";
+
+                // Cleanup common homophones and multilingual symbols for email spelling
+                text = text.toLowerCase()
+                    .replace(/\bat\b/g, "@")
+                    .replace(/ऐट/g, "@")
+                    .replace(/அட்/g, "@")
+                    .replace(/\bdot\b/g, ".")
+                    .replace(/डॉट/g, ".")
+                    .replace(/டாட்/g, ".")
+                    .replace(/dash/g, "-")
+                    .replace(/underscore/g, "_")
+                    .replace(/\s+/g, ""); // Remove all spaces to join the spelled letters
+
+                // Basic email validation regex
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (emailRegex.test(text)) {
+                    if (emailInputRef.current) {
+                        emailInputRef.current.value = text;
+                        // Trigger input event for React
+                        emailInputRef.current.dispatchEvent(new Event("input", { bubbles: true }));
+
+                        // Speak confirmation
+                        const conf = new SpeechSynthesisUtterance(`Email captured as ${text.split("").join(" ")}. You can now submit.`);
+                        window.speechSynthesis.speak(conf);
+                    }
+                } else {
+                    console.error("Failed to parse email. Raw input:", data.transcript, "Parsed as:", text);
+                    const err = new SpeechSynthesisUtterance("Could not understand email address. Please try spelling it again.");
+                    window.speechSynthesis.speak(err);
+                }
+            }
+        } catch (err) {
+            console.error(err);
+        }
+    };
 
     // Profile Adaptation: Auto-focus email field on load for MOTOR
     useEffect(() => {
@@ -138,6 +245,32 @@ export function LoginForm({ action }: LoginFormProps) {
                                 We&apos;ll send a magic link to this address.
                             </p>
                         )}
+
+                        {/* Voice Input Button */}
+                        <div className="pt-2">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={isListeningForEmail ? stopEmailListening : startEmailListening}
+                                className={cn(
+                                    "w-full flex items-center justify-center gap-2 border-2 transition-all",
+                                    isListeningForEmail ? "bg-red-50 text-red-600 border-red-500 animate-pulse hover:bg-red-100 hover:text-red-700" : "bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 hover:border-blue-300",
+                                    largeInteractionMode ? "h-14 text-lg" : "h-12 text-md"
+                                )}
+                            >
+                                {isListeningForEmail ? (
+                                    <>
+                                        <span className="w-3 h-3 rounded-full bg-red-600 animate-bounce" />
+                                        Listening for email address... (Tap to stop)
+                                    </>
+                                ) : (
+                                    <>
+                                        <span>🎙️</span>
+                                        Speak Email Address
+                                    </>
+                                )}
+                            </Button>
+                        </div>
                     </div>
 
                     {/* 2️⃣ MOTOR PROFILE ADAPTATION: Domain Buttons */}

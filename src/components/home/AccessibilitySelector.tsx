@@ -31,7 +31,7 @@ export function AccessibilitySelector() {
                     This will enable features like high contrast, large buttons, or voice assistance.
                 </p>
 
-                <Select value={disabilityType} onValueChange={(v: DisabilityType) => handleSelection(v)}>
+                <Select value={disabilityType} onValueChange={(v) => handleSelection(v as DisabilityType)}>
                     <SelectTrigger
                         id="global-disability-selector"
                         className="bg-white border-blue-300 focus:ring-blue-500 text-base py-6 [.high-contrast_&]:!bg-black [.high-contrast_&]:!text-white [.high-contrast_&]:!border-white"

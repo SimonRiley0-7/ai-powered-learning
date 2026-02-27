@@ -10,7 +10,7 @@ interface AssessmentData {
     subject: string;
     duration: number;
     isAdaptive: boolean;
-    questions: { id: string, type: "MCQ" | "DESCRIPTIVE" | "SHORT_ANSWER", prompt: string, points: number, difficulty: string, options?: unknown, correctAnswer?: string }[];
+    questions: { id: string, type: "MCQ" | "DESCRIPTIVE" | "SHORT_ANSWER" | "NUMERICAL" | "DIAGRAM", prompt: string, points: number, difficulty: string, options?: unknown, correctAnswer?: string }[];
 }
 
 export default function AssessmentTakerWrapper({ attempt, settings }: { attempt: { id: string, startedAt: Date, extraTimeMultiplier: number, assessment: AssessmentData }, settings: { lockedBySupervisor?: boolean, autoAdvanceQuestions?: boolean, textToSpeech?: boolean } }) {

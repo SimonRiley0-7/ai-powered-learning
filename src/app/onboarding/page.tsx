@@ -166,7 +166,7 @@ export default function OnboardingPage() {
                                                 </Label>
                                                 <Select
                                                     value={role}
-                                                    onValueChange={(v: "ADMIN" | "INSTRUCTOR" | "CANDIDATE") => setRole(v)}
+                                                    onValueChange={(v) => setRole(v as "ADMIN" | "INSTRUCTOR" | "CANDIDATE")}
                                                     name="role"
                                                 >
                                                     <SelectTrigger
@@ -238,9 +238,9 @@ export default function OnboardingPage() {
                                                 </Label>
                                                 <Select
                                                     value={disabilityType}
-                                                    onValueChange={(v: DisabilityType) => {
-                                                        setDisabilityType(v)
-                                                        setDisabilityProfile(v) // Update global UI immediately
+                                                    onValueChange={(v) => {
+                                                        setDisabilityType(v as DisabilityType)
+                                                        setDisabilityProfile(v as DisabilityType) // Update global UI immediately
                                                     }}
                                                 >
                                                     <SelectTrigger id="disability-type" className={largeInteractionMode ? "h-16 text-xl" : "focus:outline focus:outline-2 focus:outline-blue-500"}>
