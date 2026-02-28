@@ -89,6 +89,7 @@ const SelectTrigger = React.forwardRef<HTMLButtonElement, SelectTriggerProps>(
         ref={ref}
         type="button"
         role="combobox"
+        aria-controls="radix-select-content"
         aria-expanded={open}
         data-slot="select-trigger"
         data-size={size}

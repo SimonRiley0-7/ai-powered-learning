@@ -43,6 +43,8 @@ export interface EnterpriseGradingResult {
     careerMapping: CareerMapping | null;
     numericalValidation: NumericalValidation | null;
     diagramEvaluation: DiagramEvaluation | null;
+    /** Human-readable note about any accessibility accommodations applied */
+    accessibilityNotes?: string;
 }
 
 export interface IntegrityFlags {
@@ -53,6 +55,17 @@ export interface IntegrityFlags {
     low_pov_flag: boolean;
     time_anomaly_flag: boolean;
 }
+
+/**
+ * Accessibility profile used to apply fair accommodations during grading.
+ * NONE    = Standard grading — no modifications.
+ * VISUAL  = Suppress low-POV flag (dictated answers have simpler structure).
+ * MOTOR   = Relax word-count cap (dictated answers tend to be shorter).
+ * COGNITIVE = Relax word-count cap + suppress low-POV flag + soften relevance penalty.
+ * HEARING / SPEECH = Standard grading — no modifications needed.
+ */
+export type AccessibilityProfile = "NONE" | "VISUAL" | "MOTOR" | "COGNITIVE" | "HEARING" | "SPEECH";
+
 
 interface QuestionMeta {
     id: string;
@@ -77,10 +90,20 @@ interface QuestionMeta {
 export async function gradeEnterpriseAnswer(
     question: QuestionMeta,
     answer: string,
+    accessibilityProfile: AccessibilityProfile = "NONE",
 ): Promise<EnterpriseGradingResult> {
 
+    // Accumulate accessibility accommodation notes for transparency
+    const accommodationNotes: string[] = [];
+
     // ── EMPTY ANSWER → instant 0 ──
-    const trimmed = (answer || "").trim();
+    const raw = (answer || "").trim();
+    // DIAGRAM answers from DiagramAnswerInput are stored as: "[data-URL]\n---DESCRIPTION---\n[text]"
+    // Extract only the text description for grading (the engine grades text, not images)
+    const SEP = "\n---DESCRIPTION---\n";
+    const sepIdx = raw.indexOf(SEP);
+    const trimmed = sepIdx >= 0 ? raw.slice(sepIdx + SEP.length).trim() : raw;
+
     if (trimmed.length < 3) {
         console.log("⛔ [Engine] Empty/blank answer — 0 marks");
         return zeroResult(question.points, "No answer provided. 0 marks awarded.");
@@ -101,6 +124,7 @@ export async function gradeEnterpriseAnswer(
             careerMapping: null,
             numericalValidation: null,
             diagramEvaluation: null,
+            accessibilityNotes: undefined,
         };
     }
 
@@ -220,10 +244,19 @@ export async function gradeEnterpriseAnswer(
     const supportingKW = question.supportingKeywords || [];
     const kwAnalysis = analyzeKeywords(trimmed, mandatoryKW, supportingKW);
 
-    // Word count check
+    // Word count check — COGNITIVE and MOTOR users get a relaxed threshold
+    // because they often answer via voice dictation (shorter, simpler sentences)
     const wordCount = trimmed.split(/\s+/).length;
     const minWords = question.minWords || 20;
-    const tooShort = wordCount < Math.round(minWords * 0.5);
+    const wordCountThreshold = (accessibilityProfile === "COGNITIVE" || accessibilityProfile === "MOTOR")
+        ? Math.round(minWords * 0.30)  // 30% threshold instead of 50%
+        : Math.round(minWords * 0.5);
+    const tooShort = wordCount < wordCountThreshold;
+    if (accessibilityProfile === "COGNITIVE" || accessibilityProfile === "MOTOR") {
+        if (wordCount < Math.round(minWords * 0.5) && wordCount >= wordCountThreshold) {
+            accommodationNotes.push(`Word count relaxed for ${accessibilityProfile} profile (${wordCount} words accepted).`);
+        }
+    }
 
     // STEP 2-4: AI CALLS (parallel)
     let rawMarksDist: MarksDistribution | null = null;
@@ -346,12 +379,20 @@ export async function gradeEnterpriseAnswer(
     score = Math.max(0, Math.min(score, maxPts));
 
     // STEP 7: FLAGS & FEEDBACK
+    // Suppress low-POV flag for VISUAL and COGNITIVE:
+    // - VISUAL: answers likely dictated; natural speech has lower literary POV
+    // - COGNITIVE: not expected to demonstrate strong analytical voice
+    const suppressLowPov = accessibilityProfile === "VISUAL" || accessibilityProfile === "COGNITIVE";
+    if (suppressLowPov && povScore < 40) {
+        accommodationNotes.push(`Low POV flag suppressed for ${accessibilityProfile} profile.`);
+    }
+
     const flags: IntegrityFlags = {
         irrelevant_answer_flag: false,
         ai_usage_suspected: false,
         style_inconsistency_flag: false,
         keyword_penalty: kwAnalysis.keyword_penalty,
-        low_pov_flag: povScore < 40,
+        low_pov_flag: suppressLowPov ? false : povScore < 40,
         time_anomaly_flag: false,
     };
 
@@ -365,7 +406,9 @@ export async function gradeEnterpriseAnswer(
     if (flags.low_pov_flag) feedback += " Lacks personal analysis.";
     if (flags.keyword_penalty) feedback += " Keyword stuffing detected.";
 
-    console.log(`📊 [Engine] FINAL: ${score}/${maxPts} | Mandatory=${mandatoryScore} Supporting=${supportingScore} Points=${pointsScore} AI=${aiQualityScore} | Relevance=${relevanceScore}`);
+    const accessibilityNotes = accommodationNotes.length > 0 ? accommodationNotes.join(" ") : undefined;
+
+    console.log(`📊 [Engine] FINAL: ${score}/${maxPts} | Mandatory=${mandatoryScore} Supporting=${supportingScore} Points=${pointsScore} AI=${aiQualityScore} | Relevance=${relevanceScore} | Profile=${accessibilityProfile}`);
 
     return {
         score,
@@ -379,6 +422,7 @@ export async function gradeEnterpriseAnswer(
         careerMapping: null,
         numericalValidation: null,
         diagramEvaluation: null,
+        accessibilityNotes,
     };
 }
 
@@ -431,10 +475,10 @@ export async function runAttemptLevelAnalysis(
     }
 
     const aggregated: IntegrityFlags = {
-        irrelevant_answer_flag: results.some(r => r.integrityFlags.irrelevant_answer_flag),
+        irrelevant_answer_flag: results.some(r => r.integrityFlags?.irrelevant_answer_flag),
         ai_usage_suspected: originality.ai_generated_probability > 70 && originality.pov_presence_score < 40,
         style_inconsistency_flag: originality.style_inconsistency_flag,
-        keyword_penalty: results.some(r => r.integrityFlags.keyword_penalty),
+        keyword_penalty: results.some(r => r.integrityFlags?.keyword_penalty),
         low_pov_flag: originality.pov_presence_score < 40,
         time_anomaly_flag: false,
     };

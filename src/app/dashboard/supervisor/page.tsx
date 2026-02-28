@@ -22,7 +22,16 @@ export const metadata = {
 export default async function SupervisorPanelPage() {
     const session = await auth()
 
-    if (!session?.user || (session.user.role !== "ADMIN" && session.user.role !== "INSTRUCTOR")) {
+    if (!session?.user) {
+        redirect("/dashboard")
+    }
+
+    const dbUser = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { role: true }
+    })
+
+    if (dbUser?.role !== "ADMIN" && dbUser?.role !== "INSTRUCTOR") {
         redirect("/dashboard")
     }
 

@@ -62,10 +62,6 @@ export default function DemoAssessmentPage() {
     },
   ];
 
-  const handleStartAssessment = () => {
-    setStarted(true);
-  };
-
   const handleAssessmentComplete = (answers: { questionId: string, userAnswer: string }[]) => {
     setResults({
       answers,
@@ -126,11 +122,11 @@ export default function DemoAssessmentPage() {
               </div>
             </div>
 
-            <div className="text-center pt-4">
+            {/*<div className="text-center pt-4">
               <Button size="lg" onClick={handleStartAssessment}>
                 Start Demo Assessment
               </Button>
-            </div>
+            </div>*/}
           </CardContent>
         </Card>
       </div>

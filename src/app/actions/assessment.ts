@@ -2,7 +2,8 @@
 
 import { prisma } from "@/lib/prisma"
 import { auth } from "@/auth"
-import { gradeEnterpriseAnswer, runAttemptLevelAnalysis } from "@/lib/ai/grading-engine"
+import { gradeEnterpriseAnswer, runAttemptLevelAnalysis, type AccessibilityProfile } from "@/lib/ai/grading-engine"
+import { gradeDescriptiveAnswer } from "@/lib/ai/groq"
 
 // For Instructors to fetch their created assessments
 export async function getInstructorAssessments() {
@@ -102,12 +103,24 @@ export async function submitAttempt(
     const answerRecords: any[] = []
     const gradingResults = []
 
-    // ── Grade each question via Enterprise Engine ──
-    for (const question of attempt.assessment.questions) {
-        const response = userAnswers[question.id] || ""
+    // Fetch candidate's disability profile for disability-aware grading
+    const candidateUser = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { disabilityType: true }
+    })
+    const accessibilityProfile = (candidateUser?.disabilityType ?? "NONE") as AccessibilityProfile
 
+    // ── Filter questions (Hide Diagram for Accessibility Modes) ──
+    const displayQuestions = attempt.assessment.questions.filter(q => {
+        if (accessibilityProfile === "NONE") return true;
+        return (q.type as string).toUpperCase() !== "DIAGRAM";
+    });
+
+    // ── Grade each question via Enterprise Engine (Parallel) ──
+    const gradingPromises = displayQuestions.map(async (question) => {
+        const response = userAnswers[question.id] || "";
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const q = question as any
+        const q = question as any;
         const questionMeta = {
             id: question.id,
             prompt: question.prompt,
@@ -122,13 +135,35 @@ export async function submitAttempt(
             optimalWords: q.optimalWords as number | null,
             maxWords: q.maxWords as number | null,
             minPointsRequired: q.minPointsRequired as number | null,
+        };
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        let result: any;
+        if (question.type === "DESCRIPTIVE" || question.type === "SHORT_ANSWER") {
+            const groqResult = await gradeDescriptiveAnswer(question.prompt, question.correctAnswer, response, question.points);
+            result = {
+                score: groqResult.totalScore,
+                feedback: groqResult.improvementSuggestions,
+                marksDistribution: groqResult,
+                relevanceScore: 100,
+                pointsValidation: [],
+                keywordAnalysis: null,
+                integrityFlags: null,
+                numericalValidation: null,
+                diagramEvaluation: null
+            };
+        } else {
+            result = await gradeEnterpriseAnswer(questionMeta, response, accessibilityProfile);
         }
 
-        const result = await gradeEnterpriseAnswer(questionMeta, response)
+        return { question, response, result };
+    });
 
-        totalScore += result.score
-        gradingResults.push(result)
+    const gradedResults = await Promise.all(gradingPromises);
 
+    for (const { question, response, result } of gradedResults) {
+        totalScore += result.score;
+        gradingResults.push(result);
         answerRecords.push({
             attemptId: attempt.id,
             questionId: question.id,
@@ -141,11 +176,11 @@ export async function submitAttempt(
             integrityFlags: result.integrityFlags,
             numericalValidation: result.numericalValidation,
             diagramEvaluation: result.diagramEvaluation,
-        })
+        });
     }
 
     // ── Attempt-level analysis (originality + career mapping) ──
-    const questions = attempt.assessment.questions.map(q => {
+    const analyzerQuestions = displayQuestions.map(q => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const qAny = q as any
         return {
@@ -166,7 +201,7 @@ export async function submitAttempt(
     })
 
     const attemptAnalysis = await runAttemptLevelAnalysis(
-        questions, userAnswers, gradingResults
+        analyzerQuestions, userAnswers, gradingResults
     )
 
     // Apply originality metrics to all descriptive answer records
@@ -175,16 +210,17 @@ export async function submitAttempt(
     }
 
     // Apply career mapping to the last answer record (or first AI subject answer)
-    const aiQuestionIds = questions
+    const aiQuestionIds = analyzerQuestions
         .filter(q =>
             q.subject?.toLowerCase().includes("ai") ||
             q.subject?.toLowerCase().includes("career")
         )
-        .map(q => q.id)
+        .map(q => q.id);
 
     if (attemptAnalysis.careerMapping) {
-        const targetRecord = answerRecords.find(r => aiQuestionIds.includes(r.questionId))
-            || answerRecords[answerRecords.length - 1]
+        const careerTargetId = aiQuestionIds.length > 0 ? aiQuestionIds[0] : (analyzerQuestions.length > 0 ? analyzerQuestions[analyzerQuestions.length - 1].id : null);
+        const targetRecord = careerTargetId ? answerRecords.find(r => r.questionId === careerTargetId) : null;
+
         if (targetRecord) {
             targetRecord.careerMapping = attemptAnalysis.careerMapping
         }

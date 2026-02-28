@@ -7,6 +7,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { startAttempt } from "@/app/actions/assessment"
+import { BookOpen, Clock, Hash, ArrowRight, ShieldCheck, BarChart3, Settings } from "lucide-react"
 
 interface DashboardContentProps {
     user: { name?: string | null }
@@ -34,17 +35,13 @@ export function CandidateDashboardContent({ user, availableAssessments, verifica
         const searchQuery = searchParams.get("search");
         if (searchQuery && availableAssessments.length > 0 && !isStarting) {
             const query = searchQuery.toLowerCase();
-            // Find best match based on title or subject
             const matchedAssessment = availableAssessments.find(a =>
                 a.title.toLowerCase().includes(query) ||
                 a.subject.toLowerCase().includes(query) ||
                 query.includes(a.subject.toLowerCase()) ||
                 query.includes(a.title.toLowerCase())
             );
-
             if (matchedAssessment) {
-                console.log(`🎙️ [Auto-Start] Matched "${searchQuery}" to Assessment ID: ${matchedAssessment.id}`);
-                // Speak confirmation
                 if (typeof window !== "undefined" && "speechSynthesis" in window) {
                     const utterance = new SpeechSynthesisUtterance(`Starting ${matchedAssessment.title}`);
                     window.speechSynthesis.speak(utterance);
@@ -67,124 +64,169 @@ export function CandidateDashboardContent({ user, availableAssessments, verifica
     };
 
     return (
-        <div className={
-            // Apply the global premium background and ensure high-contrast flips to pure black
-            `relative min-h-screen overflow-hidden bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-slate-950 dark:via-slate-900 dark:to-indigo-950 p-8 pt-24 [.high-contrast_&]:!bg-black [.high-contrast_&]:!bg-none [.high-contrast_&]:!text-white ${largeInteractionMode ? "text-lg" : ""}`
-        }>
-            {/* Dynamic Background Blobs (Hidden in High Contrast) */}
-            <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none [.high-contrast_&]:hidden">
-                <div className="absolute -top-[20%] -left-[10%] w-[50%] h-[50%] rounded-full bg-indigo-400/20 dark:bg-indigo-600/20 blur-[120px] animate-pulse" style={{ animationDuration: '8s' }} />
-                <div className="absolute top-[20%] -right-[10%] w-[40%] h-[60%] rounded-full bg-purple-400/20 dark:bg-purple-600/20 blur-[120px] animate-pulse" style={{ animationDuration: '10s' }} />
-                <div className="absolute -bottom-[10%] left-[20%] w-[60%] h-[40%] rounded-full bg-blue-400/20 dark:bg-blue-600/20 blur-[120px] animate-pulse" style={{ animationDuration: '12s' }} />
-            </div>
+        <div className={`min-h-screen bg-neutral-50 pt-6 pb-16 px-6 font-sans [.high-contrast_&]:!bg-black [.high-contrast_&]:!text-white ${largeInteractionMode ? "text-lg" : ""}`}>
+            <div className="max-w-6xl mx-auto space-y-10">
 
-            <div className="max-w-6xl mx-auto space-y-8 relative z-10">
-                <div>
-                    <h1 className={`${largeInteractionMode ? "text-5xl" : "text-3xl"} font-extrabold tracking-tight [.high-contrast_&]:!text-white`}>
-                        Welcome, {user.name || "Candidate"}
+                {/* ── Page Header ── */}
+                <div className="pt-6">
+                    <p className="text-xs font-semibold tracking-widest uppercase text-neutral-400 mb-2 [.high-contrast_&]:!text-gray-400">
+                        Candidate Portal
+                    </p>
+                    <h1 className={`font-semibold tracking-tight text-neutral-900 [.high-contrast_&]:!text-white ${largeInteractionMode ? "text-5xl" : "text-3xl"}`}>
+                        Welcome back, {user.name?.split(" ")[0] || "Candidate"}
                     </h1>
-                    <p className={`${largeInteractionMode ? "text-xl" : "text-muted-foreground"} mt-2 [.high-contrast_&]:!text-white`}>
-                        {simplifiedMode ? "This is your test hub." : "Your accessible assessment portal."}
+                    <p className={`mt-2 text-neutral-500 [.high-contrast_&]:!text-gray-300 ${largeInteractionMode ? "text-xl" : "text-base"}`}>
+                        {simplifiedMode ? "Your test hub." : "Your assessments are ready. Good luck."}
                     </p>
                 </div>
 
-                <div className={`grid gap-6 ${simplifiedMode ? "grid-cols-1" : "md:grid-cols-2 lg:grid-cols-3"}`}>
-                    <div className={
-                        `rounded-3xl border border-white/50 bg-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] backdrop-blur-xl p-8 transition-all hover:bg-white/70 [.high-contrast_&]:!bg-black [.high-contrast_&]:!border-white [.high-contrast_&]:!shadow-none [.high-contrast_&]:!backdrop-blur-none ${simplifiedMode ? "col-span-1" : "md:col-span-2 lg:col-span-2"} space-y-4`
-                    }>
-                        <h3 className={`font-bold leading-none tracking-tight mb-4 [.high-contrast_&]:!text-white ${largeInteractionMode ? "text-4xl" : "text-2xl"}`}>
-                            Available Assessments
-                        </h3>
+                {/* ── Main Grid ── */}
+                <div className={`grid gap-6 ${simplifiedMode ? "grid-cols-1" : "grid-cols-1 lg:grid-cols-3"}`}>
+
+                    {/* ── Assessments Card ── */}
+                    <div className={`bg-white rounded-2xl border border-neutral-200 shadow-sm p-8 [.high-contrast_&]:!bg-black [.high-contrast_&]:!border-white ${simplifiedMode ? "" : "lg:col-span-2"}`}>
+                        <div className="flex items-center gap-3 mb-6">
+                            <div className="w-9 h-9 rounded-xl bg-neutral-100 flex items-center justify-center [.high-contrast_&]:!bg-white [.high-contrast_&]:!text-black">
+                                <BookOpen className="w-4 h-4 text-neutral-600" />
+                            </div>
+                            <h2 className={`font-semibold tracking-tight text-neutral-900 [.high-contrast_&]:!text-white ${largeInteractionMode ? "text-3xl" : "text-xl"}`}>
+                                Available Assessments
+                            </h2>
+                        </div>
+
                         {availableAssessments.length === 0 ? (
-                            <p className={`${largeInteractionMode ? "text-lg" : "text-base text-muted-foreground"} [.high-contrast_&]:!text-white`}>
-                                You have 0 pending tests.
-                            </p>
+                            <div className="py-12 text-center border border-dashed border-neutral-200 rounded-xl [.high-contrast_&]:!border-neutral-600">
+                                <BookOpen className="w-8 h-8 text-neutral-300 mx-auto mb-3" />
+                                <p className="text-base font-medium text-neutral-400 [.high-contrast_&]:!text-gray-400">
+                                    No assessments available right now.
+                                </p>
+                            </div>
                         ) : (
-                            <div className="grid gap-4">
+                            <div className="space-y-3">
                                 {availableAssessments.map((test) => (
-                                    <div key={test.id} className={
-                                        `p-5 border border-slate-200/60 rounded-2xl flex flex-col md:flex-row gap-6 md:gap-4 justify-between items-start md:items-center bg-white/40 shadow-sm transition-all hover:bg-white/80 [.high-contrast_&]:!bg-black [.high-contrast_&]:!border-white`
-                                    }>
-                                        <div className="flex-1">
-                                            <h4 className={`font-extrabold text-slate-800 ${largeInteractionMode ? "text-2xl" : "text-lg"} [.high-contrast_&]:!text-white break-words`}>{test.title}</h4>
-                                            <p className={`${largeInteractionMode ? "text-lg" : "text-sm text-slate-600"} font-medium mt-1 [.high-contrast_&]:!text-white`}>
-                                                {test.subject} • {test.duration} mins • {test._count.questions} questions
-                                            </p>
+                                    <div
+                                        key={test.id}
+                                        className="group flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 border border-neutral-100 rounded-xl hover:border-neutral-300 hover:shadow-sm transition-all bg-neutral-50/50 [.high-contrast_&]:!bg-black [.high-contrast_&]:!border-white"
+                                    >
+                                        <div className="flex-1 min-w-0">
+                                            <h3 className={`font-semibold text-neutral-900 truncate [.high-contrast_&]:!text-white ${largeInteractionMode ? "text-2xl" : "text-base"}`}>
+                                                {test.title}
+                                            </h3>
+                                            <div className={`flex flex-wrap items-center gap-x-4 gap-y-1 mt-1.5 ${largeInteractionMode ? "text-lg" : "text-sm"} text-neutral-500 [.high-contrast_&]:!text-gray-300`}>
+                                                <span className="flex items-center gap-1.5">
+                                                    <Clock className="w-3.5 h-3.5" />{test.duration} mins
+                                                </span>
+                                                <span className="flex items-center gap-1.5">
+                                                    <Hash className="w-3.5 h-3.5" />{test._count.questions} questions
+                                                </span>
+                                                <span className="font-medium text-neutral-600 [.high-contrast_&]:!text-gray-200">{test.subject}</span>
+                                            </div>
                                         </div>
-                                        <div className="w-full md:w-auto mt-2 md:mt-0 shrinkage-0">
-                                            <Button
-                                                role="link"
-                                                aria-label={`Take assessment: ${test.title}`}
-                                                onClick={() => handleStartAssessment(test.id)}
-                                                disabled={isStarting === test.id}
-                                                className={
-                                                    `w-full md:w-auto font-bold focus:outline focus:outline-2 focus:outline-blue-500 transition-all shadow-md bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white border-0 rounded-xl [.high-contrast_&]:!bg-black [.high-contrast_&]:!text-white [.high-contrast_&]:!border-white [.high-contrast_&]:!shadow-none [.high-contrast_&]:!bg-none ${largeInteractionMode ? "h-16 px-8 text-xl" : "h-12 px-6"}`
-                                                }>
-                                                {isStarting === test.id ? "Starting..." : "Take Assessment"}
-                                            </Button>
-                                        </div>
+                                        <Button
+                                            role="link"
+                                            aria-label={`Take assessment: ${test.title}`}
+                                            onClick={() => handleStartAssessment(test.id)}
+                                            disabled={isStarting === test.id}
+                                            className={`shrink-0 bg-neutral-900 text-white hover:bg-neutral-800 rounded-xl border-0 shadow-none transition-all focus:outline focus:outline-2 focus:outline-neutral-900 [.high-contrast_&]:!bg-white [.high-contrast_&]:!text-black [.high-contrast_&]:!border-white ${largeInteractionMode ? "h-14 px-8 text-xl" : "h-10 px-5 text-sm"}`}
+                                        >
+                                            {isStarting === test.id ? "Starting…" : (
+                                                <span className="flex items-center gap-2">
+                                                    Begin <ArrowRight className="w-4 h-4" />
+                                                </span>
+                                            )}
+                                        </Button>
                                     </div>
                                 ))}
                             </div>
                         )}
                     </div>
 
-                    <div className={`space-y-6 ${simplifiedMode ? "flex flex-col items-center" : ""}`}>
-                        {verification && (
-                            <div className={
-                                `rounded-3xl border border-white/50 bg-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] backdrop-blur-xl p-6 transition-all hover:bg-white/70 [.high-contrast_&]:!bg-black [.high-contrast_&]:!border-white [.high-contrast_&]:!shadow-none [.high-contrast_&]:!backdrop-blur-none ${simplifiedMode ? "w-full max-w-md" : "w-full"}`
-                            }>
-                                <div className="flex justify-between items-start mb-3">
-                                    <h3 className={`font-bold leading-none tracking-tight [.high-contrast_&]:!text-white ${largeInteractionMode ? "text-2xl" : "text-xl"}`}>
-                                        PwD Verification
-                                    </h3>
-                                    <Badge
-                                        className={`${largeInteractionMode ? "text-base px-3 py-1.5" : ""} font-bold rounded-lg shadow-sm`}
-                                        variant={verification.verificationStatus === "VERIFIED" ? "default" : verification.verificationStatus === "FAILED" ? "destructive" : "secondary"}
-                                    >
-                                        {verification.verificationStatus}
-                                    </Badge>
+                    {/* ── Sidebar (standard mode) ── */}
+                    {!simplifiedMode && (
+                        <div className="space-y-5">
+                            {/* PwD Verification */}
+                            {verification && (
+                                <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm p-6 [.high-contrast_&]:!bg-black [.high-contrast_&]:!border-white">
+                                    <div className="flex items-center gap-2 mb-4">
+                                        <ShieldCheck className="w-4 h-4 text-neutral-500" />
+                                        <h3 className={`font-semibold text-neutral-900 [.high-contrast_&]:!text-white ${largeInteractionMode ? "text-2xl" : "text-base"}`}>
+                                            PwD Verification
+                                        </h3>
+                                    </div>
+                                    <div className="flex items-center justify-between mb-3">
+                                        <p className={`text-neutral-500 [.high-contrast_&]:!text-gray-300 ${largeInteractionMode ? "text-lg" : "text-sm"} font-medium`}>
+                                            {verification.disabilityType || "Awaiting details"}
+                                        </p>
+                                        <Badge
+                                            className={`${largeInteractionMode ? "text-base px-3 py-1" : "text-xs"} font-semibold rounded-lg`}
+                                            variant={verification.verificationStatus === "VERIFIED" ? "default" : verification.verificationStatus === "FAILED" ? "destructive" : "secondary"}
+                                        >
+                                            {verification.verificationStatus}
+                                        </Badge>
+                                    </div>
+                                    {verification.verificationStatus === "FAILED" && (
+                                        <Link href="/dashboard/verify-pwd">
+                                            <Button variant="outline" size={largeInteractionMode ? "lg" : "default"} className={`w-full mt-2 rounded-xl border-neutral-200 font-medium text-neutral-700 hover:bg-neutral-50 [.high-contrast_&]:!bg-black [.high-contrast_&]:!text-white [.high-contrast_&]:!border-white ${largeInteractionMode ? "h-12 text-lg" : ""}`}>
+                                                Retry Verification
+                                            </Button>
+                                        </Link>
+                                    )}
                                 </div>
-                                <p className={`${largeInteractionMode ? "text-lg" : "text-sm"} font-semibold mb-2 text-slate-600 [.high-contrast_&]:!text-white`}>
-                                    Profile: <span className="text-slate-900 [.high-contrast_&]:!text-white">{verification.disabilityType || "Awaiting Details"}</span>
-                                </p>
-                                {verification.verificationStatus === "FAILED" && (
-                                    <Link href="/dashboard/verify-pwd">
-                                        <Button variant="outline" size={largeInteractionMode ? "lg" : "default"} className="w-full mt-4 font-bold border-slate-300 bg-white hover:bg-slate-50 rounded-xl shadow-sm [.high-contrast_&]:!bg-black [.high-contrast_&]:!text-white [.high-contrast_&]:!border-white">
-                                            Retry Verification
-                                        </Button>
-                                    </Link>
-                                )}
-                            </div>
-                        )}
+                            )}
 
-                        {!simplifiedMode && (
-                            <>
-                                <div className="rounded-3xl border border-white/50 bg-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] backdrop-blur-xl p-6 transition-all hover:bg-white/70 w-full [.high-contrast_&]:!bg-black [.high-contrast_&]:!border-white [.high-contrast_&]:!shadow-none [.high-contrast_&]:!backdrop-blur-none">
-                                    <h3 className={`font-bold leading-none tracking-tight mb-2 [.high-contrast_&]:!text-white ${largeInteractionMode ? "text-2xl" : "text-xl"}`}>
+                            {/* Past Results */}
+                            <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm p-6 [.high-contrast_&]:!bg-black [.high-contrast_&]:!border-white">
+                                <div className="flex items-center gap-2 mb-1">
+                                    <BarChart3 className="w-4 h-4 text-neutral-500" />
+                                    <h3 className={`font-semibold text-neutral-900 [.high-contrast_&]:!text-white ${largeInteractionMode ? "text-2xl" : "text-base"}`}>
                                         Past Results
                                     </h3>
-                                    <p className="text-sm font-medium text-slate-600 mb-5 [.high-contrast_&]:!text-white">View your completed assessment scores.</p>
-                                    <Link href="/dashboard/results">
-                                        <Button variant="outline" className={`w-full font-bold border-slate-300 bg-white hover:bg-slate-50 rounded-xl shadow-sm [.high-contrast_&]:!bg-black [.high-contrast_&]:!text-white [.high-contrast_&]:!border-white ${largeInteractionMode ? "h-14 text-lg" : "h-12"}`}>
-                                            View History
-                                        </Button>
-                                    </Link>
                                 </div>
-                                <div className="rounded-3xl border border-white/50 bg-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] backdrop-blur-xl p-6 transition-all hover:bg-white/70 w-full [.high-contrast_&]:!bg-black [.high-contrast_&]:!border-white [.high-contrast_&]:!shadow-none [.high-contrast_&]:!backdrop-blur-none">
-                                    <h3 className={`font-bold leading-none tracking-tight mb-2 [.high-contrast_&]:!text-white ${largeInteractionMode ? "text-2xl" : "text-xl"}`}>
+                                <p className={`text-neutral-400 mb-5 [.high-contrast_&]:!text-gray-400 ${largeInteractionMode ? "text-lg" : "text-sm"}`}>
+                                    Review your completed assessment scores.
+                                </p>
+                                <Link href="/dashboard/results">
+                                    <Button variant="outline" className={`w-full rounded-xl border-neutral-200 font-medium text-neutral-700 hover:bg-neutral-50 [.high-contrast_&]:!bg-black [.high-contrast_&]:!text-white [.high-contrast_&]:!border-white ${largeInteractionMode ? "h-12 text-lg" : "h-10"}`}>
+                                        View History
+                                    </Button>
+                                </Link>
+                            </div>
+
+                            {/* Accessibility Settings */}
+                            <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm p-6 [.high-contrast_&]:!bg-black [.high-contrast_&]:!border-white">
+                                <div className="flex items-center gap-2 mb-1">
+                                    <Settings className="w-4 h-4 text-neutral-500" />
+                                    <h3 className={`font-semibold text-neutral-900 [.high-contrast_&]:!text-white ${largeInteractionMode ? "text-2xl" : "text-base"}`}>
                                         Accessibility Profile
                                     </h3>
-                                    <p className="text-sm font-medium text-slate-600 mb-5 [.high-contrast_&]:!text-white">Update your specific needs and UI preferences.</p>
-                                    <Link href="/dashboard/settings">
-                                        <Button variant="outline" className={`w-full font-bold border-slate-300 bg-white hover:bg-slate-50 rounded-xl shadow-sm [.high-contrast_&]:!bg-black [.high-contrast_&]:!text-white [.high-contrast_&]:!border-white ${largeInteractionMode ? "h-14 text-lg" : "h-12"}`}>
-                                            Accessibility Controls
-                                        </Button>
-                                    </Link>
                                 </div>
-                            </>
-                        )}
-                    </div>
+                                <p className={`text-neutral-400 mb-5 [.high-contrast_&]:!text-gray-400 ${largeInteractionMode ? "text-lg" : "text-sm"}`}>
+                                    Update your UI preferences and needs.
+                                </p>
+                                <Link href="/dashboard/settings">
+                                    <Button variant="outline" className={`w-full rounded-xl border-neutral-200 font-medium text-neutral-700 hover:bg-neutral-50 [.high-contrast_&]:!bg-black [.high-contrast_&]:!text-white [.high-contrast_&]:!border-white ${largeInteractionMode ? "h-12 text-lg" : "h-10"}`}>
+                                        Accessibility Controls
+                                    </Button>
+                                </Link>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* ── Simplified mode stack ── */}
+                    {simplifiedMode && (
+                        <div className="space-y-4">
+                            <Link href="/dashboard/results">
+                                <Button variant="outline" className={`w-full rounded-xl border-neutral-200 font-medium [.high-contrast_&]:!bg-black [.high-contrast_&]:!text-white [.high-contrast_&]:!border-white ${largeInteractionMode ? "h-14 text-xl" : "h-12"}`}>
+                                    View Past Results
+                                </Button>
+                            </Link>
+                            <Link href="/dashboard/settings">
+                                <Button variant="outline" className={`w-full rounded-xl border-neutral-200 font-medium [.high-contrast_&]:!bg-black [.high-contrast_&]:!text-white [.high-contrast_&]:!border-white ${largeInteractionMode ? "h-14 text-xl" : "h-12"}`}>
+                                    Accessibility Controls
+                                </Button>
+                            </Link>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

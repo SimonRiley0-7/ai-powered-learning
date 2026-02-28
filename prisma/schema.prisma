@@ -28,6 +28,13 @@ model User {
   sessions          Session[]
   pwdVerification   PWDVerification?
   accessibilitySettings AccessibilitySettings?
+  // Course platform relations
+  enrollments         CourseEnrollment[]
+  moduleProgress      UserModuleProgress[]
+  learningProfile     UserLearningProfile?
+  reflections         Reflection[]
+  taskSubmissions     TaskSubmission[]
+  certificates        Certificate[]
 }
 
 model Assessment {
@@ -280,4 +287,163 @@ enum DisabilityType {
   HEARING
   COGNITIVE
   SPEECH
+}
+
+// ──────────────────────────────────────────────────
+// COURSE PLATFORM MODELS
+// ──────────────────────────────────────────────────
+
+enum CourseType {
+  STANDARD
+  SOCIAL_CONFIDENCE
+}
+
+model Course {
+  id            String            @id @default(cuid())
+  title         String
+  description   String            @db.Text
+  objectives    String[]
+  outcomes      String[]
+  subject       String
+  skillLevel    SkillLevel
+  durationHours Int               @default(6)
+  isPublished   Boolean           @default(false)
+  courseType    CourseType        @default(STANDARD)
+  instructorId  String
+  thumbnailUrl  String?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  modules       Module[]
+  enrollments   CourseEnrollment[]
+}
+
+model Module {
+  id                  String               @id @default(cuid())
+  courseId            String
+  order               Int                  // 1–5
+  title               String
+  conceptText         String               @db.Text
+  simplifiedText      String?              @db.Text
+  videoUrl1           String?              // Concept video
+  videoUrl2           String?              // Case example video
+  practicePrompt      String?              @db.Text
+  reflectionPrompt    String               @default("Reflect on what you learned in this module.")
+  reflectionRequired  Boolean              @default(true)
+  minReflectionWords  Int                  @default(50)
+  course              Course               @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  questions           ModuleQuestion[]
+  progress            UserModuleProgress[]
+  reflections         Reflection[]
+  taskSubmissions     TaskSubmission[]
+}
+
+model ModuleQuestion {
+  id            String       @id @default(cuid())
+  moduleId      String
+  prompt        String
+  type          QuestionType @default(MCQ)
+  options       Json?        // string[]
+  correctAnswer String?
+  explanation   String?      // shown after incorrect answer
+  points        Int          @default(1)
+  module        Module       @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+}
+
+model CourseEnrollment {
+  id            String    @id @default(cuid())
+  userId        String
+  courseId      String
+  enrolledAt    DateTime  @default(now())
+  completedAt   DateTime?
+  certificateId String?
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course        Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, courseId])
+}
+
+model UserModuleProgress {
+  id                  String   @id @default(cuid())
+  userId              String
+  moduleId            String
+  // Component scores 0–100 (server-calculated only)
+  lessonScore         Float    @default(0)  // 20% weight
+  videoScore          Float    @default(0)  // 15% weight
+  practiceScore       Float    @default(0)  // 20% weight
+  theoryScore         Float    @default(0)  // 25% weight
+  taskScore           Float    @default(0)  // 20% weight
+  // Weighted total 0–100
+  totalProgress       Float    @default(0)
+  // State flags
+  lessonRead          Boolean  @default(false)
+  videoWatched        Boolean  @default(false)
+  quizPassed          Boolean  @default(false)
+  reflectionSubmitted Boolean  @default(false)
+  practiceSubmitted   Boolean  @default(false)
+  simplifiedMode      Boolean  @default(false)
+  quizFailCount       Int      @default(0)
+  timeSpentMinutes    Int      @default(0)
+  startedAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  module              Module   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, moduleId])
+}
+
+model UserLearningProfile {
+  id                   String   @id @default(cuid())
+  userId               String   @unique
+  weakTopics           String[]
+  strongTopics         String[]
+  avgQuizAccuracy      Float    @default(0)
+  avgReflectionQuality Float    @default(0)
+  learningSpeed        String   @default("NORMAL")  // SLOW | NORMAL | FAST
+  emotionalTone        String   @default("NEUTRAL")  // NERVOUS | NEUTRAL | CONFIDENT
+  socialConfidenceScore Float?
+  preferSimplified     Boolean  @default(false)
+  updatedAt            DateTime @updatedAt
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Reflection {
+  id           String   @id @default(cuid())
+  userId       String
+  moduleId     String
+  content      String   @db.Text
+  wordCount    Int
+  aiScore      Float?
+  aiFeedback   String?  @db.Text
+  submittedAt  DateTime @default(now())
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  module       Module   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+}
+
+model TaskSubmission {
+  id            String   @id @default(cuid())
+  userId        String
+  moduleId      String
+  taskType      String   // SAFE_TASK | INTERMEDIATE | ADVANCED | CUSTOM
+  description   String   @db.Text
+  fearRating    Int?     // 1–10 (social confidence course)
+  whyDifficult  String?  @db.Text
+  aiBreakdown   String?  @db.Text
+  aiFeedback    String?  @db.Text
+  submittedAt   DateTime @default(now())
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  module        Module   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+}
+
+model Certificate {
+  id              String   @id @default(cuid())
+  userId          String
+  courseId        String
+  candidateName   String
+  courseName      String
+  finalScore      Float
+  modeUsed        String
+  integrityPassed Boolean  @default(true)
+  growthSummary   String?  @db.Text
+  issuedAt        DateTime @default(now())
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

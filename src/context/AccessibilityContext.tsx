@@ -139,7 +139,7 @@ export function AccessibilityProvider({ children }: { children: React.ReactNode 
         } catch (error) {
             console.error("Failed to fetch accessibility settings:", error)
         }
-    }, [session])
+    }, [session, applyProfile])
 
     useEffect(() => {
         refreshSettings()
@@ -152,13 +152,20 @@ export function AccessibilityProvider({ children }: { children: React.ReactNode 
         }
     }
 
-    const toggleVoiceGuidance = () => {
+    const toggleVoiceGuidance = useCallback(() => {
         setState(prev => ({ ...prev, voiceGuidanceEnabled: !prev.voiceGuidanceEnabled }))
-    }
+    }, [])
+
+    const [mounted, setMounted] = useState(false)
+    useEffect(() => {
+        setMounted(true)
+    }, [])
 
     return (
         <AccessibilityContext.Provider value={{ ...state, setDisabilityProfile, refreshSettings, toggleVoiceGuidance }}>
-            {children}
+            <div style={{ visibility: mounted ? "visible" : "hidden", display: "contents" }}>
+                {children}
+            </div>
         </AccessibilityContext.Provider>
     )
 }

@@ -9,6 +9,7 @@ import {
   CardFooter
 } from "@/components/ui/card";
 import { AccessibilitySelector } from "@/components/home/AccessibilitySelector";
+import { BookOpen, Ear, BarChart3, ArrowRight } from "lucide-react";
 
 export const metadata = {
   title: "AI-Powered Accessible Assessment Platform",
@@ -26,22 +27,15 @@ export default function HomePage() {
         Skip to main content
       </a>
 
-      <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-slate-950 dark:via-slate-900 dark:to-indigo-950 pb-36 [.high-contrast_&]:!bg-black [.high-contrast_&]:!bg-none">
-        {/* Dynamic Background Elements - Hidden in High Contrast */}
-        <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none [.high-contrast_&]:hidden">
-          <div className="absolute -top-[20%] -left-[10%] w-[50%] h-[50%] rounded-full bg-indigo-400/20 dark:bg-indigo-600/20 blur-[120px] animate-pulse" style={{ animationDuration: '8s' }} />
-          <div className="absolute top-[20%] -right-[10%] w-[40%] h-[60%] rounded-full bg-purple-400/20 dark:bg-purple-600/20 blur-[120px] animate-pulse" style={{ animationDuration: '10s' }} />
-          <div className="absolute -bottom-[10%] left-[20%] w-[60%] h-[40%] rounded-full bg-blue-400/20 dark:bg-blue-600/20 blur-[120px] animate-pulse" style={{ animationDuration: '12s' }} />
-        </div>
-
-        <div className="container relative z-10 mx-auto py-16 px-4">
+      <div className="relative min-h-screen bg-neutral-50 dark:bg-neutral-950 pb-36 [.high-contrast_&]:!bg-black [.high-contrast_&]:!bg-none font-sans">
+        <div className="container relative z-10 mx-auto py-20 px-8">
           {/* ── Hero ─────────────────────────────────────────── */}
-          <header className="text-center mb-16 animate-in slide-in-from-top-4 duration-700">
-            <h1 className="text-5xl md:text-6xl font-extrabold tracking-tight text-slate-900 dark:text-white mb-6 drop-shadow-sm [.high-contrast_&]:!text-white">
+          <header className="text-center mb-16 animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <h1 className="text-5xl md:text-6xl font-semibold tracking-tight text-neutral-900 dark:text-white mb-6 [.high-contrast_&]:!text-white">
               AI-Powered Assessment Platform
             </h1>
-            <p className="text-xl md:text-2xl text-slate-600 dark:text-slate-300 max-w-3xl mx-auto mb-10 font-medium [.high-contrast_&]:!text-white">
-              Comprehensive skill evaluation with inclusive accessibility features and adaptive assessment technology
+            <p className="text-lg md:text-xl text-neutral-600 dark:text-neutral-400 max-w-2xl mx-auto mb-12 [.high-contrast_&]:!text-white">
+              Comprehensive skill evaluation with inclusive accessibility features and adaptive assessment technology.
             </p>
             <div className="flex justify-center">
               <AccessibilitySelector />
@@ -51,71 +45,88 @@ export default function HomePage() {
           {/* ── Main content ─────────────────────────────────── */}
           <main id="main-content" className="relative z-10">
             {/* Feature cards */}
-            <section aria-labelledby="features-heading">
+            <section aria-labelledby="features-heading" className="mb-24">
               <h2 id="features-heading" className="sr-only">Platform Features</h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16 animate-in fade-in zoom-in-95 duration-700 delay-150 fill-mode-both">
-                <Card className="border border-white/50 dark:border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.08)] backdrop-blur-xl bg-white/70 dark:bg-slate-900/70 hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:-translate-y-1 transition-all duration-300 rounded-2xl overflow-hidden [.high-contrast_&]:!bg-black [.high-contrast_&]:!border-white [.high-contrast_&]:!shadow-none [.high-contrast_&]:!backdrop-blur-none">
-                  <CardHeader>
-                    <h3 className="font-semibold text-lg">Comprehensive Assessment</h3>
-                    <CardDescription>Multiple formats to evaluate diverse skill sets</CardDescription>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-150 fill-mode-both">
+
+                <Card className="border border-neutral-200 shadow-sm hover:shadow-md transition-shadow duration-300 rounded-2xl bg-white dark:bg-neutral-900/50 [.high-contrast_&]:!bg-black [.high-contrast_&]:!border-white">
+                  <CardHeader className="pb-4">
+                    <div className="w-12 h-12 flex items-center justify-center rounded-xl bg-neutral-100 text-neutral-600 mb-4 dark:bg-neutral-800 dark:text-neutral-300 [.high-contrast_&]:!bg-white [.high-contrast_&]:!text-black">
+                      <BookOpen className="w-6 h-6" />
+                    </div>
+                    <h3 className="text-xl font-semibold text-neutral-900 dark:text-white [.high-contrast_&]:!text-white">Comprehensive Assessment</h3>
+                    <CardDescription className="text-base text-neutral-500">Multiple formats to evaluate diverse skill sets</CardDescription>
                   </CardHeader>
-                  <CardContent>
-                    <ul className="list-disc pl-5 space-y-1">
-                      <li>MCQs, descriptive questions, practical exams</li>
-                      <li>Vocational and technical skill evaluation</li>
-                      <li>Customizable assessment templates</li>
+                  <CardContent className="pb-6">
+                    <ul className="space-y-3 text-neutral-600 dark:text-neutral-400 [.high-contrast_&]:!text-gray-300">
+                      <li className="flex gap-2"><span aria-hidden="true">•</span> MCQs, descriptive questions, practical exams</li>
+                      <li className="flex gap-2"><span aria-hidden="true">•</span> Vocational and technical skill evaluation</li>
+                      <li className="flex gap-2"><span aria-hidden="true">•</span> Customizable assessment templates</li>
                     </ul>
                   </CardContent>
                   <CardFooter>
-                    <Link href="/assessments" className="w-full" aria-label="View available assessments">
-                      <Button className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold border-0 shadow-[0_4px_14px_0_rgba(79,70,229,0.39)] hover:shadow-[0_6px_20px_rgba(79,70,229,0.23)] rounded-xl" aria-label="View Assessments">View Assessments</Button>
+                    <Link href="/assessments" className="w-full group" aria-label="View available assessments">
+                      <Button variant="outline" className="w-full justify-between rounded-xl h-12 border-neutral-200 text-neutral-900 hover:bg-neutral-50 dark:border-neutral-800 dark:text-white dark:hover:bg-neutral-800 [.high-contrast_&]:!bg-black [.high-contrast_&]:!text-white [.high-contrast_&]:!border-white transition-colors">
+                        View Assessments
+                        <ArrowRight className="w-4 h-4 text-neutral-400 group-hover:text-neutral-900 transition-colors" />
+                      </Button>
                     </Link>
                   </CardFooter>
                 </Card>
 
-                <Card className="border border-white/50 dark:border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.08)] backdrop-blur-xl bg-white/70 dark:bg-slate-900/70 hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:-translate-y-1 transition-all duration-300 rounded-2xl overflow-hidden [.high-contrast_&]:!bg-black [.high-contrast_&]:!border-white [.high-contrast_&]:!shadow-none [.high-contrast_&]:!backdrop-blur-none">
-                  <CardHeader>
-                    <h3 className="font-semibold text-lg">Inclusive Accessibility</h3>
-                    <CardDescription>Features designed for all candidates</CardDescription>
+                <Card className="border border-neutral-200 shadow-sm hover:shadow-md transition-shadow duration-300 rounded-2xl bg-white dark:bg-neutral-900/50 [.high-contrast_&]:!bg-black [.high-contrast_&]:!border-white">
+                  <CardHeader className="pb-4">
+                    <div className="w-12 h-12 flex items-center justify-center rounded-xl bg-neutral-100 text-neutral-600 mb-4 dark:bg-neutral-800 dark:text-neutral-300 [.high-contrast_&]:!bg-white [.high-contrast_&]:!text-black">
+                      <Ear className="w-6 h-6" />
+                    </div>
+                    <h3 className="text-xl font-semibold text-neutral-900 dark:text-white [.high-contrast_&]:!text-white">Inclusive Accessibility</h3>
+                    <CardDescription className="text-base text-neutral-500">Features designed for all candidates</CardDescription>
                   </CardHeader>
-                  <CardContent>
-                    <ul className="list-disc pl-5 space-y-1">
-                      <li>Screen reader compatibility</li>
-                      <li>Text-to-speech &amp; voice-to-text</li>
-                      <li>High contrast mode and keyboard navigation</li>
-                      <li>Extended time accommodations</li>
+                  <CardContent className="pb-6">
+                    <ul className="space-y-3 text-neutral-600 dark:text-neutral-400 [.high-contrast_&]:!text-gray-300">
+                      <li className="flex gap-2"><span aria-hidden="true">•</span> Screen reader compatibility</li>
+                      <li className="flex gap-2"><span aria-hidden="true">•</span> Text-to-speech & voice-to-text</li>
+                      <li className="flex gap-2"><span aria-hidden="true">•</span> High contrast mode and keyboard priority</li>
                     </ul>
                   </CardContent>
                   <CardFooter>
-                    <Link href="/accessibility" className="w-full" aria-label="Learn about accessibility features">
-                      <Button variant="outline" className="w-full font-bold border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-900/80 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 rounded-xl [.high-contrast_&]:!bg-black [.high-contrast_&]:!text-white [.high-contrast_&]:!border-white">Accessibility Features</Button>
+                    <Link href="/accessibility" className="w-full group" aria-label="Learn about accessibility features">
+                      <Button variant="outline" className="w-full justify-between rounded-xl h-12 border-neutral-200 text-neutral-900 hover:bg-neutral-50 dark:border-neutral-800 dark:text-white dark:hover:bg-neutral-800 [.high-contrast_&]:!bg-black [.high-contrast_&]:!text-white [.high-contrast_&]:!border-white transition-colors">
+                        Accessibility Features
+                        <ArrowRight className="w-4 h-4 text-neutral-400 group-hover:text-neutral-900 transition-colors" />
+                      </Button>
                     </Link>
                   </CardFooter>
                 </Card>
 
-                <Card className="border border-white/50 dark:border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.08)] backdrop-blur-xl bg-white/70 dark:bg-slate-900/70 hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:-translate-y-1 transition-all duration-300 rounded-2xl overflow-hidden [.high-contrast_&]:!bg-black [.high-contrast_&]:!border-white [.high-contrast_&]:!shadow-none [.high-contrast_&]:!backdrop-blur-none">
-                  <CardHeader>
-                    <h3 className="font-semibold text-lg">AI-Driven Analytics</h3>
-                    <CardDescription>Detailed insights and personalized feedback</CardDescription>
+                <Card className="border border-neutral-200 shadow-sm hover:shadow-md transition-shadow duration-300 rounded-2xl bg-white dark:bg-neutral-900/50 [.high-contrast_&]:!bg-black [.high-contrast_&]:!border-white">
+                  <CardHeader className="pb-4">
+                    <div className="w-12 h-12 flex items-center justify-center rounded-xl bg-neutral-100 text-neutral-600 mb-4 dark:bg-neutral-800 dark:text-neutral-300 [.high-contrast_&]:!bg-white [.high-contrast_&]:!text-black">
+                      <BarChart3 className="w-6 h-6" />
+                    </div>
+                    <h3 className="text-xl font-semibold text-neutral-900 dark:text-white [.high-contrast_&]:!text-white">AI-Driven Analytics</h3>
+                    <CardDescription className="text-base text-neutral-500">Detailed insights and personalized feedback</CardDescription>
                   </CardHeader>
-                  <CardContent>
-                    <ul className="list-disc pl-5 space-y-1">
-                      <li>Performance analytics across skills</li>
-                      <li>Adaptive learning recommendations</li>
-                      <li>Gemini-powered response evaluation</li>
-                      <li>Detailed feedback on each response</li>
+                  <CardContent className="pb-6">
+                    <ul className="space-y-3 text-neutral-600 dark:text-neutral-400 [.high-contrast_&]:!text-gray-300">
+                      <li className="flex gap-2"><span aria-hidden="true">•</span> Performance analytics across skills</li>
+                      <li className="flex gap-2"><span aria-hidden="true">•</span> Adaptive learning recommendations</li>
+                      <li className="flex gap-2"><span aria-hidden="true">•</span> Detailed feedback on each response</li>
                     </ul>
                   </CardContent>
                   <CardFooter>
-                    <Link href="/analytics" className="w-full" aria-label="View analytics dashboard">
-                      <Button variant="outline" className="w-full font-bold border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-900/80 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 rounded-xl [.high-contrast_&]:!bg-black [.high-contrast_&]:!text-white [.high-contrast_&]:!border-white">View Analytics</Button>
+                    <Link href="/analytics" className="w-full group" aria-label="View analytics dashboard">
+                      <Button variant="outline" className="w-full justify-between rounded-xl h-12 border-neutral-200 text-neutral-900 hover:bg-neutral-50 dark:border-neutral-800 dark:text-white dark:hover:bg-neutral-800 [.high-contrast_&]:!bg-black [.high-contrast_&]:!text-white [.high-contrast_&]:!border-white transition-colors">
+                        View Analytics
+                        <ArrowRight className="w-4 h-4 text-neutral-400 group-hover:text-neutral-900 transition-colors" />
+                      </Button>
                     </Link>
                   </CardFooter>
                 </Card>
               </div>
             </section>
 
-            {/* Demo CTA */}
+            {/* Demo CTA
             <section
               aria-labelledby="demo-heading"
               className="rounded-3xl p-10 mb-16 text-center shadow-[0_8px_30px_rgb(0,0,0,0.08)] backdrop-blur-xl bg-gradient-to-br from-white/90 to-blue-50/90 dark:from-slate-900/90 dark:to-indigo-950/90 border border-white/50 dark:border-white/10 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-300 fill-mode-both [.high-contrast_&]:!bg-black [.high-contrast_&]:!bg-none [.high-contrast_&]:!border-white [.high-contrast_&]:!shadow-none [.high-contrast_&]:!backdrop-blur-none"
@@ -126,46 +137,40 @@ export default function HomePage() {
                   Try our demo assessment to experience the platform features
                 </p>
               </div>
-              <div className="text-center flex justify-center">
+              {/*<div className="text-center flex justify-center">
                 <Link href="/assessments/demo" aria-label="Start the demo assessment">
                   <Button size="lg" className="h-14 px-8 text-lg font-bold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white border-0 shadow-[0_4px_14px_0_rgba(79,70,229,0.39)] hover:shadow-[0_6px_20px_rgba(79,70,229,0.23)] hover:scale-[1.02] transition-all rounded-xl">Start Demo Assessment</Button>
                 </Link>
               </div>
-            </section>
+            </section>*/}
 
             {/* ── Login portals ─────────────────────────────── */}
-            <section aria-labelledby="portals-heading" className="max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-8 duration-700 delay-500 fill-mode-both">
-              <h2 id="portals-heading" className="text-3xl font-extrabold mb-8 text-center text-slate-900 dark:text-white [.high-contrast_&]:!text-white">
+            {/* ── Login portals ─────────────────────────────── */}
+            <section aria-labelledby="portals-heading" className="max-w-4xl mx-auto mb-16 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-300 fill-mode-both">
+              <h2 id="portals-heading" className="text-2xl font-semibold mb-8 text-center text-neutral-900 dark:text-white [.high-contrast_&]:!text-white">
                 Sign In
               </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Candidate portal */}
-                <Card className="border border-white/50 dark:border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.08)] backdrop-blur-xl bg-white/70 dark:bg-slate-900/70 hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:-translate-y-1 transition-all duration-300 rounded-2xl overflow-hidden [.high-contrast_&]:!bg-black [.high-contrast_&]:!border-white [.high-contrast_&]:!shadow-none [.high-contrast_&]:!backdrop-blur-none">
+                <Card className="border border-neutral-200 shadow-sm hover:shadow-md transition-shadow duration-300 rounded-2xl bg-white dark:bg-neutral-900/50 [.high-contrast_&]:!bg-black [.high-contrast_&]:!border-white">
                   <CardHeader>
-                    <h3 className="font-semibold text-lg">For Candidates</h3>
+                    <h3 className="font-semibold text-xl text-neutral-900 dark:text-white [.high-contrast_&]:!text-white">For Candidates</h3>
                   </CardHeader>
                   <CardContent>
-                    <ul className="list-disc pl-5 space-y-2">
-                      <li>Take assessments in online, offline, or blended modes</li>
-                      <li>Receive personalized feedback and improvement plans</li>
-                      <li>Access accommodations for different abilities</li>
-                      <li>Track your progress across multiple skill areas</li>
+                    <ul className="space-y-3 text-neutral-600 dark:text-neutral-400 [.high-contrast_&]:!text-gray-300">
+                      <li className="flex gap-2"><span aria-hidden="true">•</span> Take assessments with accessibility aids</li>
+                      <li className="flex gap-2"><span aria-hidden="true">•</span> Receive personalized feedback</li>
+                      <li className="flex gap-2"><span aria-hidden="true">•</span> Track your progress</li>
                     </ul>
                   </CardContent>
                   <CardFooter>
-                    {/*
-                    aria-label="Candidate login" — gives VoiceOver a crisp, unique label.
-                    It will announce: "Candidate login, link" / "Candidate login, button"
-                    which also matches our voice command "candidate login" → NAVIGATE /login
-                  */}
                     <Link
                       href="/login"
-                      className="w-full focus:outline focus:outline-2 focus:outline-blue-500 rounded"
+                      className="w-full"
                       aria-label="Candidate login — sign in as a candidate"
                     >
                       <Button
-                        variant="outline"
-                        className="w-full font-bold border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-900/80 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 rounded-xl h-12 [.high-contrast_&]:!bg-black [.high-contrast_&]:!text-white [.high-contrast_&]:!border-white"
+                        className="w-full font-medium rounded-xl h-12 bg-neutral-900 text-white hover:bg-neutral-800 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-100 [.high-contrast_&]:!bg-white [.high-contrast_&]:!text-black transition-colors"
                         aria-label="Candidate login"
                       >
                         Candidate Login
@@ -175,27 +180,26 @@ export default function HomePage() {
                 </Card>
 
                 {/* Institution portal */}
-                <Card className="border border-white/50 dark:border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.08)] backdrop-blur-xl bg-white/70 dark:bg-slate-900/70 hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:-translate-y-1 transition-all duration-300 rounded-2xl overflow-hidden [.high-contrast_&]:!bg-black [.high-contrast_&]:!border-white [.high-contrast_&]:!shadow-none [.high-contrast_&]:!backdrop-blur-none">
+                <Card className="border border-neutral-200 shadow-sm hover:shadow-md transition-shadow duration-300 rounded-2xl bg-white dark:bg-neutral-900/50 [.high-contrast_&]:!bg-black [.high-contrast_&]:!border-white">
                   <CardHeader>
-                    <h3 className="font-semibold text-lg">For Institutions</h3>
+                    <h3 className="font-semibold text-xl text-neutral-900 dark:text-white [.high-contrast_&]:!text-white">For Institutions</h3>
                   </CardHeader>
                   <CardContent>
-                    <ul className="list-disc pl-5 space-y-2">
-                      <li>Create customized assessment programs</li>
-                      <li>Monitor candidate performance with detailed analytics</li>
-                      <li>Ensure standardized evaluation across locations</li>
-                      <li>Support candidates with diverse needs and abilities</li>
+                    <ul className="space-y-3 text-neutral-600 dark:text-neutral-400 [.high-contrast_&]:!text-gray-300">
+                      <li className="flex gap-2"><span aria-hidden="true">•</span> Create accessible assessment programs</li>
+                      <li className="flex gap-2"><span aria-hidden="true">•</span> Monitor candidate analytics</li>
+                      <li className="flex gap-2"><span aria-hidden="true">•</span> Standardize evaluation</li>
                     </ul>
                   </CardContent>
                   <CardFooter>
                     <Link
                       href="/login"
-                      className="w-full focus:outline focus:outline-2 focus:outline-blue-500 rounded"
+                      className="w-full"
                       aria-label="Institution login — sign in as an institution or instructor"
                     >
                       <Button
                         variant="outline"
-                        className="w-full font-bold border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-900/80 hover:bg-purple-50 hover:text-purple-700 hover:border-purple-300 rounded-xl h-12 [.high-contrast_&]:!bg-black [.high-contrast_&]:!text-white [.high-contrast_&]:!border-white"
+                        className="w-full font-medium rounded-xl h-12 border-neutral-200 text-neutral-900 hover:bg-neutral-50 dark:border-neutral-800 dark:text-white dark:hover:bg-neutral-800 [.high-contrast_&]:!bg-black [.high-contrast_&]:!text-white [.high-contrast_&]:!border-white transition-colors"
                         aria-label="Institution login"
                       >
                         Institution Login

@@ -13,19 +13,13 @@ interface AssessmentData {
     questions: { id: string, type: "MCQ" | "DESCRIPTIVE" | "SHORT_ANSWER" | "NUMERICAL" | "DIAGRAM", prompt: string, points: number, difficulty: string, options?: unknown, correctAnswer?: string }[];
 }
 
-export default function AssessmentTakerWrapper({ attempt, settings }: { attempt: { id: string, startedAt: Date, extraTimeMultiplier: number, assessment: AssessmentData }, settings: { lockedBySupervisor?: boolean, autoAdvanceQuestions?: boolean, textToSpeech?: boolean } }) {
+export default function AssessmentTakerWrapper({ attempt, settings, serverInitialTimeRemaining }: { attempt: { id: string, startedAt: Date, extraTimeMultiplier: number, assessment: AssessmentData }, settings: { lockedBySupervisor?: boolean, autoAdvanceQuestions?: boolean, textToSpeech?: boolean }, serverInitialTimeRemaining: number }) {
     const router = useRouter();
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // Calculate real remaining time from server startedAt
-    const durationMins = attempt.assessment.duration || 60;
+    // Use strictly validated server offset
+    const initialTimeRemaining = Math.max(0, serverInitialTimeRemaining);
     const extraTime = attempt.extraTimeMultiplier || 1.0;
-    const totalAllowedSeconds = durationMins * 60 * extraTime;
-
-    const startedAtTime = new Date(attempt.startedAt).getTime();
-    const currentTime = new Date().getTime();
-    const elapsedSeconds = Math.floor((currentTime - startedAtTime) / 1000);
-    const initialTimeRemaining = Math.max(0, totalAllowedSeconds - elapsedSeconds);
 
     const handleComplete = async (answers: { questionId: string, userAnswer: string }[]) => {
         setIsSubmitting(true);

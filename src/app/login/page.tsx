@@ -1,63 +1,114 @@
-import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card"
 import Link from "next/link"
-import { loginWithMagicLink } from "@/app/actions/auth"
 import { LoginForm } from "@/components/auth/LoginForm"
+import { ShieldCheck } from "lucide-react"
 
 export const metadata = {
-    title: "Login – AI Assessment Platform",
-    description: "Secure, passwordless login for the AI-Powered Accessible Assessment Platform.",
+    title: "Sign In – AI Assessment Platform",
+    description: "Secure, passwordless sign-in for the AI-Powered Accessible Assessment Platform.",
 }
 
 export default function LoginPage() {
     return (
         <>
-            {/* Skip-to-content for keyboard / screen-reader users */}
+            {/* Skip-to-content */}
             <a
                 href="#main-content"
-                className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:bg-white focus:text-black focus:px-4 focus:py-2 focus:rounded focus:shadow focus:outline focus:outline-2 focus:outline-blue-500"
+                className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:bg-neutral-900 focus:text-white focus:px-4 focus:py-2 focus:rounded-xl focus:shadow focus:outline-none"
             >
                 Skip to main content
             </a>
 
-            <div className="relative flex min-h-screen items-center justify-center p-4 pb-36 overflow-hidden bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-slate-950 dark:via-slate-900 dark:to-indigo-950 [.high-contrast_&]:!bg-black [.high-contrast_&]:!bg-none">
-                {/* Dynamic Background Elements - Hidden in High Contrast */}
-                <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none [.high-contrast_&]:hidden">
-                    <div className="absolute -top-[20%] -left-[10%] w-[50%] h-[50%] rounded-full bg-indigo-400/20 dark:bg-indigo-600/20 blur-[120px] animate-pulse" style={{ animationDuration: '8s' }} />
-                    <div className="absolute top-[20%] -right-[10%] w-[40%] h-[60%] rounded-full bg-purple-400/20 dark:bg-purple-600/20 blur-[120px] animate-pulse" style={{ animationDuration: '10s' }} />
-                    <div className="absolute -bottom-[10%] left-[20%] w-[60%] h-[40%] rounded-full bg-blue-400/20 dark:bg-blue-600/20 blur-[120px] animate-pulse" style={{ animationDuration: '12s' }} />
+            <div className="min-h-screen bg-neutral-50 flex [.high-contrast_&]:!bg-black">
+                {/* ── Left Panel — Branding ── */}
+                <div className="hidden lg:flex flex-col justify-between w-[44%] bg-neutral-900 p-12 [.high-contrast_&]:!bg-black [.high-contrast_&]:!border-r [.high-contrast_&]:!border-white">
+                    {/* Logo */}
+                    <Link
+                        href="/"
+                        className="text-white font-semibold text-sm tracking-tight hover:opacity-70 transition-opacity focus:outline-none focus:ring-2 focus:ring-white rounded"
+                    >
+                        AI Assessment
+                    </Link>
+
+                    {/* Center copy */}
+                    <div className="space-y-6">
+                        <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center">
+                            <ShieldCheck className="w-5 h-5 text-white" />
+                        </div>
+                        <div>
+                            <h2 className="text-3xl font-semibold tracking-tight text-white leading-snug">
+                                Built for every learner.<br />No exceptions.
+                            </h2>
+                            <p className="mt-4 text-neutral-400 text-base leading-relaxed">
+                                An accessibility-first assessment platform designed to adapt to your cognitive, visual, motor, and hearing needs.
+                            </p>
+                        </div>
+
+                        {/* Trust badges */}
+                        <ul className="space-y-3 text-sm text-neutral-400">
+                            {[
+                                "Passwordless — no credentials to forget",
+                                "WCAG 2.1 AA compliant",
+                                "Voice navigation available",
+                                "PwD accommodations built-in",
+                            ].map((item) => (
+                                <li key={item} className="flex items-center gap-2">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-neutral-500 shrink-0" />
+                                    {item}
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+
+                    {/* Footer */}
+                    <p className="text-xs text-neutral-600">
+                        © {new Date().getFullYear()} AI Assessment Platform
+                    </p>
                 </div>
 
-                <main id="main-content" className="relative w-full max-w-md z-10" aria-label="Login">
-                    <Card className="border border-white/50 dark:border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.12)] backdrop-blur-xl bg-white/80 dark:bg-slate-900/80 overflow-hidden rounded-2xl [.high-contrast_&]:!bg-black [.high-contrast_&]:!border-white [.high-contrast_&]:!shadow-none [.high-contrast_&]:!backdrop-blur-none">
-                        <CardHeader className="text-center pb-8 pt-8">
-                            {/* Visible page heading – tabIndex={-1} so JS can programmatically focus here */}
+                {/* ── Right Panel — Form ── */}
+                <div className="flex-1 flex items-center justify-center px-6 py-16">
+                    <main
+                        id="main-content"
+                        className="w-full max-w-sm"
+                        aria-label="Sign in"
+                    >
+                        {/* Mobile brand */}
+                        <Link
+                            href="/"
+                            className="lg:hidden block mb-8 text-sm font-semibold text-neutral-900 hover:opacity-70 transition-opacity [.high-contrast_&]:!text-white"
+                        >
+                            AI Assessment
+                        </Link>
+
+                        {/* Heading */}
+                        <div className="mb-8">
                             <h1
-                                className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white [.high-contrast_&]:!text-white"
+                                className="text-2xl font-semibold tracking-tight text-neutral-900 [.high-contrast_&]:!text-white"
                                 tabIndex={-1}
                                 id="login-heading"
                             >
-                                Welcome Back
+                                Sign in
                             </h1>
-                            <CardDescription id="login-description" className="text-base mt-2 [.high-contrast_&]:!text-white">
-                                Secure, passwordless login to your assessment dashboard.
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="px-8 pb-8">
-                            {/* Client component handles error state + ARIA live regions */}
-                            <LoginForm action={loginWithMagicLink} />
+                            <p className="mt-1.5 text-sm text-neutral-500 [.high-contrast_&]:!text-gray-300">
+                                Enter your email — we&apos;ll send you a one-time code.
+                            </p>
+                        </div>
 
-                            <div className="mt-8 text-center text-sm">
-                                <span className="text-slate-500 dark:text-slate-400 mr-1 [.high-contrast_&]:!text-white">Don&apos;t have an account?</span>
-                                <Link
-                                    href="/register"
-                                    className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors font-bold rounded focus:outline focus:outline-2 focus:outline-blue-500 focus:outline-offset-2 [.high-contrast_&]:!text-white"
-                                >
-                                    Register here
-                                </Link>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </main>
+                        {/* Form */}
+                        <LoginForm />
+
+                        {/* Register link */}
+                        <p className="mt-8 text-sm text-center text-neutral-500 [.high-contrast_&]:!text-gray-400">
+                            No account yet?{" "}
+                            <Link
+                                href="/register"
+                                className="font-semibold text-neutral-900 hover:underline underline-offset-4 transition-all focus:outline-none focus:ring-2 focus:ring-neutral-900 rounded [.high-contrast_&]:!text-white"
+                            >
+                                Register here
+                            </Link>
+                        </p>
+                    </main>
+                </div>
             </div>
         </>
     )

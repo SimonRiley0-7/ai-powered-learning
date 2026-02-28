@@ -214,7 +214,7 @@ export async function validateNumerical(
     correctAnswer: string | null,
     maxPoints: number
 ): Promise<NumericalValidation> {
-    const prompt = `You are a deterministic numerical grading engine for Operating Systems problems.
+    const prompt = `You are a deterministic numerical grading engine.
 Return ONLY valid JSON, no other text.
 
 QUESTION: ${question}
@@ -226,10 +226,11 @@ Evaluate:
 1. Is the formula correct?
 2. Are computation steps in valid sequence?
 3. Is the final value correct?
-4. Award partial marks for correct intermediate steps.
+4. Award partial marks ONLY for correct steps.
+CRITICAL: If the answer is completely wrong, irrelevant, or nonsense, you MUST award 0 partial_marks and set all booleans to false.
 
-Return JSON:
-{"formula_correct":true,"step_sequence_valid":true,"final_value_correct":true,"partial_marks":0,"steps_analysis":[{"step":"desc","correct":true,"marks":0}]}`;
+Return JSON EXACTLY matching this schema:
+{"formula_correct":false,"step_sequence_valid":false,"final_value_correct":false,"partial_marks":0,"steps_analysis":[{"step":"desc","correct":false,"marks":0}]}`;
 
     try {
         console.log("🔧 [Ollama] Validating numerical answer...");

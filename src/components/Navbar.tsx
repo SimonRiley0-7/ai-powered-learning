@@ -7,14 +7,14 @@ export async function Navbar() {
 
     return (
         <nav
-            className="sticky top-0 z-40 w-full border-b bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/60"
+            className="sticky top-0 z-40 w-full bg-white/95 backdrop-blur border-b border-neutral-100 supports-[backdrop-filter]:bg-white/80 [.high-contrast_&]:!bg-black [.high-contrast_&]:!border-white"
             aria-label="Main navigation"
         >
             <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between gap-4">
                 {/* Brand */}
                 <Link
                     href="/"
-                    className="font-bold text-base tracking-tight hover:opacity-80 transition-opacity focus:outline focus:outline-2 focus:outline-blue-500 rounded"
+                    className="font-semibold text-sm tracking-tight text-neutral-900 hover:opacity-70 transition-opacity focus:outline focus:outline-2 focus:outline-neutral-900 rounded [.high-contrast_&]:!text-white"
                     aria-label="AI Assessment Platform – go to homepage"
                 >
                     AI Assessment
@@ -24,25 +24,39 @@ export async function Navbar() {
                 <div className="flex items-center gap-3">
                     {session?.user && (
                         <>
-                            {/* User identifier */}
                             <span
-                                className="hidden sm:block text-sm text-muted-foreground truncate max-w-[200px]"
+                                className="hidden sm:block text-sm text-neutral-400 truncate max-w-[200px] [.high-contrast_&]:!text-gray-300"
                                 aria-label={`Signed in as ${session.user.email ?? session.user.name}`}
                             >
                                 {session.user.email ?? session.user.name}
                             </span>
 
+                            <Link
+                                href="/dashboard"
+                                className="text-sm font-medium text-neutral-600 hover:text-neutral-900 transition-colors focus:outline focus:outline-2 focus:outline-neutral-900 rounded px-1 [.high-contrast_&]:!text-white"
+                                aria-label="Go to your dashboard"
+                            >
+                                Dashboard
+                            </Link>
+
+                            <Link
+                                href="/courses"
+                                className="text-sm font-medium text-neutral-600 hover:text-neutral-900 transition-colors focus:outline focus:outline-2 focus:outline-neutral-900 rounded px-1 [.high-contrast_&]:!text-white"
+                                aria-label="Browse courses"
+                            >
+                                Courses
+                            </Link>
+
                             {(session.user.role === "ADMIN" || session.user.role === "INSTRUCTOR") && (
                                 <Link
                                     href="/dashboard/supervisor"
-                                    className="text-sm font-medium hover:text-blue-600 transition-colors focus:outline focus:outline-2 focus:outline-blue-500 rounded px-1"
+                                    className="text-sm font-medium text-neutral-600 hover:text-neutral-900 transition-colors focus:outline focus:outline-2 focus:outline-neutral-900 rounded px-1 [.high-contrast_&]:!text-white"
                                     aria-label="Open Supervisor Panel"
                                 >
                                     Supervisor Panel
                                 </Link>
                             )}
 
-                            {/* Logout — uses a form + server action so it works without JS */}
                             <form
                                 action={async () => {
                                     "use server"
@@ -53,7 +67,7 @@ export async function Navbar() {
                                     type="submit"
                                     variant="outline"
                                     size="sm"
-                                    className="focus:outline focus:outline-2 focus:outline-blue-500"
+                                    className="rounded-lg border-neutral-200 text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900 focus:outline focus:outline-2 focus:outline-neutral-900 [.high-contrast_&]:!bg-black [.high-contrast_&]:!text-white [.high-contrast_&]:!border-white"
                                     aria-label="Sign out of your account"
                                 >
                                     Sign Out

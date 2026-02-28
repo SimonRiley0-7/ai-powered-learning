@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import React, { useState, useCallback } from "react";
 
 /**
  * SpeakButton — Reusable TTS button
  * Place next to any text content to read it aloud via Sarvam AI
  */
-export default function SpeakButton({
+export default React.memo(function SpeakButton({
     text,
     language = "en-IN",
     size = "sm",
@@ -53,14 +53,17 @@ export default function SpeakButton({
 
             audio.onended = () => {
                 setPlaying(false);
+                window.dispatchEvent(new Event("tts_end"));
                 URL.revokeObjectURL(url);
             };
             audio.onerror = () => {
                 setPlaying(false);
                 setError("Playback failed");
+                window.dispatchEvent(new Event("tts_end"));
                 URL.revokeObjectURL(url);
             };
 
+            window.dispatchEvent(new Event("tts_start"));
             await audio.play();
         } catch (err) {
             setError(String(err));
@@ -108,4 +111,4 @@ export default function SpeakButton({
             )}
         </button>
     );
-}
+});

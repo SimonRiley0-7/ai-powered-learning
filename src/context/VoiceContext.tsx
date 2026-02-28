@@ -103,6 +103,37 @@ export function VoiceProvider({ children }: { children: ReactNode }) {
         }
     }, [isWebSpeechSupported, isListening, engine]);
 
+    // PREVENT AUDIO FEEDBACK LOOP: Stop listening when TTS is playing
+    useEffect(() => {
+        const handleTtsStart = () => {
+            if (isListening) {
+                if (engine === "WEB_SPEECH" && recognitionRef.current) {
+                    try { recognitionRef.current.stop(); } catch { }
+                } else if (engine === "AI_CLOUD" && mediaRecorderRef.current?.state === "recording") {
+                    try { mediaRecorderRef.current.pause(); } catch { }
+                }
+            }
+        };
+
+        const handleTtsEnd = () => {
+            if (isListening) {
+                if (engine === "WEB_SPEECH" && recognitionRef.current) {
+                    try { recognitionRef.current.start(); } catch { }
+                } else if (engine === "AI_CLOUD" && mediaRecorderRef.current?.state === "paused") {
+                    try { mediaRecorderRef.current.resume(); } catch { }
+                }
+            }
+        };
+
+        window.addEventListener("tts_start", handleTtsStart);
+        window.addEventListener("tts_end", handleTtsEnd);
+
+        return () => {
+            window.removeEventListener("tts_start", handleTtsStart);
+            window.removeEventListener("tts_end", handleTtsEnd);
+        };
+    }, [isListening, engine]);
+
     const startGroqRecording = async () => {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
